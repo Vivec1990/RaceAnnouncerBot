@@ -19,6 +19,7 @@ public class JimBot162 {
                 .build();
 		twitchJim.getEventManager().registerEventListener(new TwitchListener(twitchJim));
 		twitchJim.getEventManager().registerEventListener(new MessageListener());
+		System.out.println("Connecting to twitch...");
 		twitchJim.connect();
 		twitchJim.addChannel("#"+botName.toLowerCase());
 		twitchJim.sendMessage("#"+botName.toLowerCase(), "Up and ready");
