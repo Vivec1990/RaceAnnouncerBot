@@ -5,6 +5,8 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.Callable;
+import java.util.concurrent.TimeUnit;
 
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -24,7 +26,6 @@ public class RaceWatcher {
 	private Client twitchJim;
 	private String raceId;
 	
-	private WaitForGoListener wfgl;
 	OkHttpClient httpClient = new OkHttpClient();
 	Request raceDataRequest;
 	
@@ -37,18 +38,35 @@ public class RaceWatcher {
 		this.raceDataRequest = new Request.Builder().url("http://api.speedrunslive.com:81/races/"+this.raceId).build();
 		this.raceId = raceData.getString(SRLApiKeys.KEYS_ID);
 		if(srlJim == null) {
-			srlJim = Client.builder().nick(JimBot162.getBotName()).serverHost("irc.speedrunslive.com").serverPort(6667).secure(false).serverPassword(JimBot162.getSrlPass()).buildAndConnect();
+			srlJim = Client.builder().nick(JimBot162.getBotName())
+					.serverHost("irc.speedrunslive.com")
+					.serverPort(6667)
+					.secure(false)
+					.serverPassword(JimBot162.getSrlPass())
+					.buildAndConnect();
 		}
 		srlJim.addChannel("#srl-"+this.raceId+"-livesplit");
-		srlJim.addChannel("#"+this.raceId);
 //		srlJim.getEventManager().registerEventListener(this);
-		this.wfgl = new WaitForGoListener(this);
-		srlJim.getEventManager().registerEventListener(wfgl);
 		this.twitchJim = twitchJim;
+		boolean raceStarted = false;
+		try {
+			while(!raceStarted) {
+				raceData = new JSONObject(httpClient.newCall(this.raceDataRequest).execute().body().string());
+				int raceStatus = raceData.getInt("state");
+				raceStarted = raceStatus == 3;
+				TimeUnit.MINUTES.sleep(1);
+			}
+			this.initialize();
+		} catch (JSONException e) {
+			e.printStackTrace();
+		} catch (IOException e) {
+			e.printStackTrace();
+		} catch (InterruptedException e) {
+			e.printStackTrace();
+		}
 	}
 	
 	private void initialize() throws JSONException, IOException {
-		srlJim.getEventManager().unregisterEventListener(wfgl);
 		srlJim.getEventManager().registerEventListener(this);
 		JSONObject raceData = new JSONObject(httpClient.newCall(this.raceDataRequest).execute().body().string());
 		JSONObject jsonEntrants = raceData.getJSONObject(SRLApiKeys.KEYS_ENTRANTS);
@@ -57,24 +75,6 @@ public class RaceWatcher {
 			twitchJim.addChannel(channelName);
 			twitchJim.sendMessage(channelName, "Hi, I am JimBot and I will announce the times of the other racers here.");
 		}
-	}
-	
-	private class WaitForGoListener {
-		
-		private RaceWatcher rw;
-		public WaitForGoListener(RaceWatcher rw) {
-			this.rw = rw;
-		}
-		
-		@Handler
-		private void ircMessageReceived(ChannelMessageEvent event) throws JSONException, IOException {
-			User author = event.getActor();
-			String message = event.getMessage();
-			if(author.getNick().equalsIgnoreCase("RaceBot")) return;
-			if(!message.contains("GO!")) return;
-			rw.initialize();
-		}
-		
 	}
 	
 	@Handler
