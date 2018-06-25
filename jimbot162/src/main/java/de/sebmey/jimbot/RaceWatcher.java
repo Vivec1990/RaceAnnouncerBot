@@ -5,14 +5,12 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
 
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.kitteh.irc.client.library.Client;
 import org.kitteh.irc.client.library.element.Channel;
-import org.kitteh.irc.client.library.element.User;
 import org.kitteh.irc.client.library.event.channel.ChannelMessageEvent;
 
 import com.squareup.okhttp.OkHttpClient;
@@ -35,8 +33,8 @@ public class RaceWatcher {
 	List<String> forfeits = new ArrayList<String>();
 	
 	public RaceWatcher(JSONObject raceData, Client twitchJim) {
-		this.raceDataRequest = new Request.Builder().url("http://api.speedrunslive.com:81/races/"+this.raceId).build();
 		this.raceId = raceData.getString(SRLApiKeys.KEYS_ID);
+		this.raceDataRequest = new Request.Builder().url("http://api.speedrunslive.com:81/races/"+this.raceId).build();
 		if(srlJim == null) {
 			srlJim = Client.builder().nick(JimBot162.getBotName())
 					.serverHost("irc.speedrunslive.com")
@@ -54,6 +52,7 @@ public class RaceWatcher {
 				raceData = new JSONObject(httpClient.newCall(this.raceDataRequest).execute().body().string());
 				int raceStatus = raceData.getInt("state");
 				raceStarted = raceStatus == 3;
+				System.out.println("Race not in progress yet, sleeping.");
 				TimeUnit.MINUTES.sleep(1);
 			}
 			this.initialize();
