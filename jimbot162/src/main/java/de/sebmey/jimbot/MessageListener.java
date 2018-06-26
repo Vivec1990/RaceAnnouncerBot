@@ -53,7 +53,6 @@ public class MessageListener {
 	}
 	
 	private String findRaceWithUser(JSONArray races, String user) {
-		final String race = null;
 		Optional<JSONObject> raceWithUser = arrayToStream(races)
 			.map(JSONObject.class::cast)
 			.filter(r -> (r.getInt("state") < 4))
