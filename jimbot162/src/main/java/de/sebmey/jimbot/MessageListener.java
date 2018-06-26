@@ -63,7 +63,14 @@ public class MessageListener {
 	
 	private boolean userHasEntered(JSONObject race, String user) {
 		JSONObject entrants = race.getJSONObject("entrants");
-		return entrants.has(user);
+		
+		for(String entrant : entrants.keySet()) {
+			JSONObject entr = entrants.getJSONObject(entrant);
+			if(entr.getString(SRLApiKeys.KEYS_ENTRANTS_TWITCH).equals(user)) {
+				return true;
+			}
+		}
+		return false;
 	}
 	
 }
