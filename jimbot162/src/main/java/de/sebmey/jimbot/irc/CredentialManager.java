@@ -1,26 +1,36 @@
 package de.sebmey.jimbot.irc;
 
 public class CredentialManager {
-	private static String botUsername;
-	private static String botTwitchOAuth;
-	private static String botSRLPass;
+	private String botUsername;
+	private String botTwitchOAuth;
+	private String botSRLPass;
 	
-	public static String getBotUsername() {
+	private static CredentialManager INSTANCE = new CredentialManager();
+	
+	public static CredentialManager getInstance() {
+		return INSTANCE;
+	}
+	
+	private CredentialManager() {
+		
+	}
+	
+	public String getBotUsername() {
 		return botUsername;
 	}
-	public static void setBotUsername(String botUsername) {
-		CredentialManager.botUsername = botUsername;
+	public void setBotUsername(String botUsername) {
+		this.botUsername = botUsername;
 	}
-	public static String getBotTwitchOAuth() {
+	public String getBotTwitchOAuth() {
 		return botTwitchOAuth;
 	}
-	public static void setBotTwitchOAuth(String botTwitchOAuth) {
-		CredentialManager.botTwitchOAuth = botTwitchOAuth;
+	public  void setBotTwitchOAuth(String botTwitchOAuth) {
+		this.botTwitchOAuth = botTwitchOAuth;
 	}
-	public static String getBotSRLPass() {
+	public  String getBotSRLPass() {
 		return botSRLPass;
 	}
-	public static void setBotSRLPass(String botSRLPass) {
-		CredentialManager.botSRLPass = botSRLPass;
+	public  void setBotSRLPass(String botSRLPass) {
+		this.botSRLPass = botSRLPass;
 	}
 }

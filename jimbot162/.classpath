@@ -28,5 +28,6 @@
 			<attribute name="maven.pomderived" value="true"/>
 		</attributes>
 	</classpathentry>
+	<classpathentry kind="lib" path="src/main/resources/TwitchIRC_v1.2.jar" sourcepath="src/main/resources/TwitchIRC_v1.2.jar"/>
 	<classpathentry kind="output" path="target/classes"/>
 </classpath>
