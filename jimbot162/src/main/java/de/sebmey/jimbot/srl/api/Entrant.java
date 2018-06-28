@@ -16,14 +16,21 @@ public class Entrant {
 	public Entrant(JSONObject entrantData, String userName) {
 		this.userName = userName;
 		
-		String displayName;
-		long place;
-		long time;
-		String message;
-		PlayerState state;
-		String twitch;
-		long trueskill;
-		
+		updateData(entrantData);
+	}
+	
+	public void updateData(Entrant entrant) {
+		this.displayName = entrant.getDisplayName();
+		this.userName = entrant.getUserName();
+		this.trueskill = entrant.getTrueskill();
+		this.twitch = entrant.getTwitch();
+		this.state = entrant.getState();
+		this.message = entrant.getMessage();
+		this.place = entrant.getPlace();
+		this.time = entrant.getTime();
+	}
+	
+	public void updateData(JSONObject entrantData) {
 		if(entrantData.has(EntrantJSONKeys.ENTRANT_DISPLAYNAME)) {
 			displayName = entrantData.getString(EntrantJSONKeys.ENTRANT_DISPLAYNAME);
 		} else {
@@ -70,14 +77,6 @@ public class Entrant {
 		} else {
 			throw new IllegalArgumentException("The JSON data does not contain a trueskill, it probably is not a proper result from the SRL api");
 		}
-		
-		this.displayName = displayName;
-		this.place = place;
-		this.time = time;
-//		this.message = message;
-		this.state = state;
-		this.twitch = twitch;
-		this.trueskill = trueskill;
 	}
 	
 	public String getUserName() {
