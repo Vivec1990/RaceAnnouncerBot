@@ -73,7 +73,7 @@ public class WatchedRace {
 	public List<Entrant> getRunnersConnectedThroughLiveSplit() {
 		return runnersConnectedThroughLiveSplit;
 	}
-
+	
 	public Game getGame() {
 		return game;
 	}
@@ -93,9 +93,18 @@ public class WatchedRace {
 	public ScheduledThreadPoolExecutor getExec() {
 		return exec;
 	}
+	
+	public void addRunner(Entrant e) {
+		this.getRunnersConnectedThroughLiveSplit().add(e);
+		this.twitchClient.joinChannel(e.getTwitch().toLowerCase());
+	}
 
 	public void recordSplitTime(String splitName, String user, String time) {
 		Entrant e = findEntrantByUsername(user);
+		if(e == null) {
+			e = getRunnerInRaceFromAPI(user);
+			this.addRunner(e);
+		}
 		if(e != null) {
 			RaceSplit rs = findRaceSplitByName(splitName);
 			if(rs == null) {
@@ -105,6 +114,16 @@ public class WatchedRace {
 			rs.addTime(e, time);
 			this.announceSplitIfComplete(rs);
 		}
+	}
+	
+	private Entrant getRunnerInRaceFromAPI(String user) {
+		Race race = api.getSingleRace(this.raceId);
+		for(Entrant e : race.getEntrants()) {
+			if(e.getUserName().equals(user)) {
+				return e;
+			}
+		}
+		return null;
 	}
 	
 	private void announceSplitIfComplete(RaceSplit rs) {
@@ -129,8 +148,10 @@ public class WatchedRace {
 		}
 		
 		for(Entrant e : this.getRunnersConnectedThroughLiveSplit()) {
-			System.out.println("Sending times to " + e.getTwitch());
-			this.twitchClient.sendMessage(message, Channel.getChannel(e.getTwitch().toLowerCase(), this.twitchClient));
+			if(e.getState() != PlayerState.FORFEIT) {
+				System.out.println("Sending times to " + e.getTwitch());
+				this.twitchClient.sendMessage(message, Channel.getChannel(e.getTwitch().toLowerCase(), this.twitchClient));
+			}
 		}
 	}
 	

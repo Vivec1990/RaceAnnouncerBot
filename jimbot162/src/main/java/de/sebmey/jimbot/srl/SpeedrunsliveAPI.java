@@ -2,7 +2,6 @@ package de.sebmey.jimbot.srl;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
 import org.json.JSONArray;
