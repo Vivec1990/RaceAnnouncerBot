@@ -13,6 +13,7 @@ import org.kitteh.irc.client.library.Client;
 import com.cavariux.twitchirc.Chat.Channel;
 
 import de.sebmey.jimbot.announcer.RaceSplit.SplitTime;
+import de.sebmey.jimbot.announcer.gamesplits.PKMNREDBLUE;
 import de.sebmey.jimbot.irc.srl.RaceSplitTimeListener;
 import de.sebmey.jimbot.irc.srl.SpeedrunsliveIRCConnectionManager;
 import de.sebmey.jimbot.irc.twitch.TwitchIRCConnectionManager;
@@ -78,6 +79,12 @@ public class WatchedRace {
 			this.addRunner(e);
 		}
 		if(e != null) {
+			if(this.getGame().getId() == 6) {
+				String standardSplitName = PKMNREDBLUE.getSplitNameByNameOrAlias(splitName);
+				if(standardSplitName != null) {
+					splitName = standardSplitName;
+				}
+			}
 			RaceSplit rs = findRaceSplitByName(splitName);
 			if(rs == null) {
 				rs = new RaceSplit(splitName);
@@ -102,6 +109,13 @@ public class WatchedRace {
 		if(this.announcedSplits.contains(rs.getSplitName())) {
 			System.out.println("Split " + rs.getSplitName() + " has already been announced, not announcing again.");
 			return;
+		}
+		if(this.getGame().getId() == 6) {
+			PKMNREDBLUE split = PKMNREDBLUE.getSplitDataByNameOrAlias(rs.getSplitName());
+			if(split != null && !split.isAnnounce()) {
+				System.out.println("Split " + split.getName() + " is configured to not be announced.");
+				return;
+			}
 		}
 		Race race = this.api.getSingleRace(this.raceId);
 		for(Entrant e : this.runnersConnectedThroughLiveSplit) {
