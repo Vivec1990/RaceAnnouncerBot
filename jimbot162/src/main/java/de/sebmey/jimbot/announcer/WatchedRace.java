@@ -166,7 +166,7 @@ public class WatchedRace {
 	
 	private RaceSplit findRaceSplitByName(String splitName) {
 		for(RaceSplit rs : this.splits) {
-			if(rs.getSplitName().equals(splitName)) {
+			if(rs.getSplitName().equalsIgnoreCase(splitName)) {
 				return rs;
 			}
 		}
