@@ -11,7 +11,7 @@ public enum PKMNREDBLUE {
 	SURGE		("Surge", true),
 	FLY			("Fly", true, "HM02", "HM2", "HM Fly"),
 	FLUTE		("Flute", true, "PokéFlute", "PokeFlute"),
-	KOGA		("Koage", true),
+	KOGA		("Koga", true),
 	ERIKA		("Erika", false),
 	BLAINE		("Blaine", false),
 	SABRINA		("Sabrina", true),
