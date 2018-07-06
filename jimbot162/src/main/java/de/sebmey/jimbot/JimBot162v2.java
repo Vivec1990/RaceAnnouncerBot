@@ -14,5 +14,4 @@ public class JimBot162v2 {
 		TwitchJim jim = TwitchIRCConnectionManager.getInstance().getIRCClient();
 		jim.start();
 	}
-	
 }

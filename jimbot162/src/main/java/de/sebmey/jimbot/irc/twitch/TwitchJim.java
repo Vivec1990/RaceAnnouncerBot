@@ -27,6 +27,11 @@ public class TwitchJim extends TwitchBot {
 	}
 	
 	@Override
+	public void onMessage(User user, Channel channel, String message) {
+		// do nothing
+	}
+	
+	@Override
 	@SuppressWarnings("deprecation")
 	public void onCommand(User user, Channel channel, String command) {
 		if(channel.equals(this.botChannel)) {
@@ -59,6 +64,9 @@ public class TwitchJim extends TwitchBot {
 					}
 				}
 			}
+		}
+		if(command.equalsIgnoreCase("jimrace")) {
+			
 		}
 	}
 	

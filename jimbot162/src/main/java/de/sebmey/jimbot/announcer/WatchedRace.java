@@ -27,6 +27,7 @@ import de.sebmey.jimbot.srl.api.RaceState;
 public class WatchedRace {
 	
 	private List<Entrant> runnersConnectedThroughLiveSplit = new ArrayList<Entrant>();
+	private List<String> announcedSplits = new ArrayList<String>();
 	private Game game;
 	private List<RaceSplit> splits;
 	private String raceId;
@@ -70,35 +71,6 @@ public class WatchedRace {
 		}
 	}
 	
-	public List<Entrant> getRunnersConnectedThroughLiveSplit() {
-		return runnersConnectedThroughLiveSplit;
-	}
-	
-	public Game getGame() {
-		return game;
-	}
-
-	public List<RaceSplit> getSplits() {
-		return splits;
-	}
-
-	public String getRaceId() {
-		return raceId;
-	}
-
-	public SpeedrunsliveAPI getApi() {
-		return api;
-	}
-
-	public ScheduledThreadPoolExecutor getExec() {
-		return exec;
-	}
-	
-	public void addRunner(Entrant e) {
-		this.getRunnersConnectedThroughLiveSplit().add(e);
-		this.twitchClient.joinChannel(e.getTwitch().toLowerCase());
-	}
-
 	public void recordSplitTime(String splitName, String user, String time) {
 		Entrant e = findEntrantByUsername(user);
 		if(e == null) {
@@ -119,7 +91,7 @@ public class WatchedRace {
 	private Entrant getRunnerInRaceFromAPI(String user) {
 		Race race = api.getSingleRace(this.raceId);
 		for(Entrant e : race.getEntrants()) {
-			if(e.getUserName().equals(user)) {
+			if(e.getUserName().equalsIgnoreCase(user)) {
 				return e;
 			}
 		}
@@ -127,6 +99,10 @@ public class WatchedRace {
 	}
 	
 	private void announceSplitIfComplete(RaceSplit rs) {
+		if(this.announcedSplits.contains(rs.getSplitName())) {
+			System.out.println("Split " + rs.getSplitName() + " has already been announced, not announcing again.");
+			return;
+		}
 		Race race = this.api.getSingleRace(this.raceId);
 		for(Entrant e : this.runnersConnectedThroughLiveSplit) {
 			e.updateData(findEntrantByUsername(e.getUserName(), race.getEntrants()));
@@ -153,6 +129,7 @@ public class WatchedRace {
 				this.twitchClient.sendMessage(message, Channel.getChannel(e.getTwitch().toLowerCase(), this.twitchClient));
 			}
 		}
+		this.announcedSplits.add(rs.getSplitName());
 	}
 	
 	private Entrant findEntrantByUsername(String user) {
@@ -189,6 +166,35 @@ public class WatchedRace {
 			System.out.println("Left channel " + e.getTwitch());
 		}
 		this.srlClient.removeChannel(srlLiveSplitChannelName);
+	}
+	
+	public List<Entrant> getRunnersConnectedThroughLiveSplit() {
+		return runnersConnectedThroughLiveSplit;
+	}
+	
+	public Game getGame() {
+		return game;
+	}
+
+	public List<RaceSplit> getSplits() {
+		return splits;
+	}
+
+	public String getRaceId() {
+		return raceId;
+	}
+
+	public SpeedrunsliveAPI getApi() {
+		return api;
+	}
+
+	public ScheduledThreadPoolExecutor getExec() {
+		return exec;
+	}
+	
+	public void addRunner(Entrant e) {
+		this.getRunnersConnectedThroughLiveSplit().add(e);
+		this.twitchClient.joinChannel(e.getTwitch().toLowerCase());
 	}
 	
 	private class RaceStateChecker implements Runnable{

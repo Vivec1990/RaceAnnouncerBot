@@ -30,7 +30,6 @@ public class RaceSplitTimeListener {
 		WatchedRace wr = RaceAnnouncer.getInstance().getRaceByID(raceId);
 		if(wr != null) {
 			wr.recordSplitTime(splitName, author.getNick(), splitTime);
-			System.out.println("Time recorded for split " + splitName + " and user " + author.getNick() + ". The time was " + splitTime);
 		}
 	}
 	
