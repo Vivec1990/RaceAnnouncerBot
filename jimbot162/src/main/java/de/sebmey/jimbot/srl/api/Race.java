@@ -128,7 +128,7 @@ public class Race {
 	}
 	
 	public String[] getRaceInfo() {
-		String[] result = {};
+		String[] result = new String[2];
 		int entrantNum = this.getEntrants().size();
 		int forfeits = 0;
 		String link = "http://kadgar.net/live";

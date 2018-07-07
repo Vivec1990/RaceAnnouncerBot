@@ -16,7 +16,7 @@ public class RaceAnnouncer {
 	
 	private static RaceAnnouncer INSTANCE;
 	
-	public static RaceAnnouncer getInstance() {
+	public static synchronized RaceAnnouncer getInstance() {
 		if(INSTANCE == null) {
 			INSTANCE = new RaceAnnouncer();
 		}

@@ -71,7 +71,7 @@ public class TwitchJim extends TwitchBot {
 			if(r != null) {
 				String[] raceInfo = r.getRaceInfo();
 				this.sendMessage(raceInfo[0], channel);
-				if(raceInfo.length == 2) {
+				if(raceInfo[1] != null && !raceInfo[1].isEmpty()) {
 					this.sendMessage(raceInfo[1], channel);
 				}
 			}
