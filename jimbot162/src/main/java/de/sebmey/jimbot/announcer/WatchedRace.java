@@ -43,6 +43,7 @@ public class WatchedRace {
 	public WatchedRace(Race race) throws JSONException, IOException, InterruptedException {
 		this.splits = new ArrayList<RaceSplit>();
 		this.raceId = race.getId();
+		this.game = race.getGame();
 		this.api = new SpeedrunsliveAPI();
 		this.srlClient = SpeedrunsliveIRCConnectionManager.getInstance().getIRCClient();
 		this.srlLiveSplitChannelName = "#srl-" + this.raceId + "-livesplit";
@@ -82,6 +83,7 @@ public class WatchedRace {
 			if(this.getGame().getId() == 6) {
 				String standardSplitName = PKMNREDBLUE.getSplitNameByNameOrAlias(splitName);
 				if(standardSplitName != null) {
+					System.out.println("Found standardized name for " + splitName + ", using " + standardSplitName);
 					splitName = standardSplitName;
 				}
 			}

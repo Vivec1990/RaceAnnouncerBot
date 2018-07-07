@@ -126,6 +126,44 @@ public class Race {
 	public void setEntrants(List<Entrant> entrants) {
 		this.entrants = entrants;
 	}
+	
+	public String[] getRaceInfo() {
+		String[] result = {};
+		int entrantNum = this.getEntrants().size();
+		int forfeits = 0;
+		String link = "http://kadgar.net/live";
+		for(Entrant e : this.getEntrants()) {
+			if(e.getState() == PlayerState.FORFEIT) {
+				forfeits++;
+			}
+			if(e.getTwitch() != null) {
+				link += "/"+e.getTwitch();
+			}
+		}
+		StringBuilder builder = new StringBuilder();
+		builder.append("| Game: " + this.getGame().getName() + " - " + this.getGoal());
+		switch(this.getState()) {
+			case ENTRY_OPEN: 
+				builder.append(" | Status: Waiting for entrants")
+				.append(" | Racers: " + entrantNum + " entrants.");
+				result[1] = link;
+				break;
+			case IN_PROGRESS:
+				builder.append(" | Status: Race in progress")
+				.append(" | Racers: " + entrantNum + " entrants, " + (entrantNum-forfeits) + " still running, " + forfeits + " forfeited.");
+				result[1] = link;
+				break;
+			case TERMINATED:
+			case COMPLETE:
+				builder.append(" | Status: Race over")
+				.append(" | " + entrantNum + " total entrants, " + (entrantNum-forfeits) + " completed the race, " + forfeits + " forfeited.");
+				break;
+			case CURRENTLY_UNKNOWN:
+				break;
+		}
+		result[0] = builder.toString();
+		return result;
+	}
 
 	private class RaceJSONKeys {
 		public static final String RACE_ID = "id";

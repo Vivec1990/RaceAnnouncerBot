@@ -21,7 +21,4 @@ public class TwitchIRCConnectionManager {
 		}
 		return INSTANCE;
 	}
-	
-	
-	
 }

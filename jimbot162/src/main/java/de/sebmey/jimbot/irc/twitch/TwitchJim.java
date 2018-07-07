@@ -35,6 +35,7 @@ public class TwitchJim extends TwitchBot {
 	@SuppressWarnings("deprecation")
 	public void onCommand(User user, Channel channel, String command) {
 		if(channel.equals(this.botChannel)) {
+			
 			if("race".equalsIgnoreCase(command)) {
 				
 				Race race = api.findRaceWithTwitchUser(user.toString());
@@ -65,8 +66,15 @@ public class TwitchJim extends TwitchBot {
 				}
 			}
 		}
-		if(command.equalsIgnoreCase("jimrace")) {
-			
+		if(command.equalsIgnoreCase("raceinfo") || command.equalsIgnoreCase("racestats")) {
+			Race r = api.findRaceWithTwitchUser(channel.toString().substring(1));
+			if(r != null) {
+				String[] raceInfo = r.getRaceInfo();
+				this.sendMessage(raceInfo[0], channel);
+				if(raceInfo.length == 2) {
+					this.sendMessage(raceInfo[1], channel);
+				}
+			}
 		}
 	}
 	

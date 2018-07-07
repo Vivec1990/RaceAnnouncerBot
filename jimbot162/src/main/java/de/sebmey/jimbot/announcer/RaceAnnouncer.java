@@ -6,6 +6,7 @@ import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
 import de.sebmey.jimbot.srl.SpeedrunsliveAPI;
+import de.sebmey.jimbot.srl.api.Entrant;
 import de.sebmey.jimbot.srl.api.Race;
 import de.sebmey.jimbot.srl.api.RaceState;
 
@@ -37,6 +38,17 @@ public class RaceAnnouncer {
 		return null;
 	}
 	
+	public WatchedRace getRaceByParticipant(String username) {
+		for(WatchedRace r : this.watchedRaces) {
+			for(Entrant e : r.getRunnersConnectedThroughLiveSplit()) {
+				if(username != null && username.equalsIgnoreCase(e.getTwitch())) {
+					return r;
+				}
+			}
+		}
+		return null;
+	}
+	
 	public void addRace(WatchedRace wr)  {
 		this.watchedRaces.add(wr);
 	}
@@ -51,6 +63,7 @@ public class RaceAnnouncer {
 				Race jRace = api.getSingleRace(wr.getRaceId());
 				if(jRace.getState() == RaceState.COMPLETE || jRace.getState() == RaceState.TERMINATED) {
 					wr.finishRace();
+					RaceAnnouncer.getInstance().watchedRaces.remove(wr);
 				}
 			}
 		}
