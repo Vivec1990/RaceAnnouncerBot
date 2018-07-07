@@ -32,6 +32,21 @@
 			<artifactId>client-lib</artifactId>
 			<version>4.0.2</version>
 		</dependency>
+		<dependency>
+			<groupId>com.j256.ormlite</groupId>
+			<artifactId>ormlite-core</artifactId>
+			<version>5.1</version>
+		</dependency>
+		<dependency>
+			<groupId>com.j256.ormlite</groupId>
+			<artifactId>ormlite-jdbc</artifactId>
+			<version>5.1</version>
+		</dependency>
+		<dependency>
+			<groupId>org.xerial</groupId>
+			<artifactId>sqlite-jdbc</artifactId>
+			<version>3.23.1</version>
+		</dependency>
 	</dependencies>
 	<properties>
 		<maven.compiler.source>1.8</maven.compiler.source>
