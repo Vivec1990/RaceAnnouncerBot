@@ -1,7 +1,9 @@
 package de.sebmey.jimbot.announcer;
 
+import java.util.Collections;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.*;
 
 import de.sebmey.jimbot.srl.api.Entrant;
 
@@ -23,6 +25,7 @@ public class RaceSplit {
 			}
 		}
 		splitTimes.add(new SplitTime(runner, time));
+		Collections.sort(splitTimes, new SplitTimeComparator());
 		System.out.println("Time recorded for split [" + this.splitName + "] for runner [" + runner.getDisplayName() + "]. The time was " + time);
 	}
 	
@@ -111,11 +114,20 @@ public class RaceSplit {
 				return String.format("%02d:%02d.%d", minute, second, millis);
 			}
 		}
+
+		public long getTime() { return this.time; }
 		
 		@Override
 		public String toString() {
 			return this.getEntrantName() + " : " + this.getDisplayTime();
 		}
 		
+	}
+
+	public class SplitTimeComparator implements Comparator<SplitTime> {
+		@Override
+		public int compare(SplitTime t1, SplitTime t2) {
+			return (int) Math.signum(t1.getTime() - t2.getTime());
+		}
 	}
 }

@@ -93,7 +93,7 @@ public class WatchedRace {
 				this.splits.add(rs);
 			}
 			rs.addTime(e, time);
-			
+
 			// check all splits in case someone dropped as last runner
 			for(RaceSplit rs2 : this.splits) {
 				this.announceSplitIfComplete(rs2);
