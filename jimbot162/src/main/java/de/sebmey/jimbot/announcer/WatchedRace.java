@@ -60,7 +60,7 @@ public class WatchedRace {
 		exec.scheduleAtFixedRate(new RaceStateChecker(this), 0, 1, TimeUnit.MINUTES);
 	}
 	
-	private void initalize() {
+	private void initialize() {
 		Race race = this.api.getSingleRace(this.raceId);
 		this.srlClient.getEventManager().registerEventListener(new RaceSplitTimeListener());
 		List<String> usersInLiveSplitChannel = this.srlLiveSplitChannel.getNicknames();
@@ -224,8 +224,8 @@ public class WatchedRace {
 		public void run() {
 			Race race = wr.api.getSingleRace(wr.raceId);
 			if(race.getState() == RaceState.IN_PROGRESS) {
-				System.out.println("Initalizing the race");
-				wr.initalize();
+				System.out.println("Initializing the race");
+				wr.initialize();
 				exec.shutdown();
 			} else {
 				System.out.println("Race " + wr.raceId + " has not started yet, waiting a minute. " + LocalDateTime.now().toString());
