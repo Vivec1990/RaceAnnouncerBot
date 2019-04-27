@@ -75,7 +75,7 @@ class SpeedrunsliveAPITest {
         String allRacesJson = getAllRacesJson();
 
         interceptor.addRule()
-                .get("http://api.speedrunslive.com:81/races/")
+                .get("http://api.speedrunslive.com:81/races")
                 .respond(allRacesJson, MEDIATYPE_JSON);
 
         List<Race> allRaces = api.getAllRaces();
