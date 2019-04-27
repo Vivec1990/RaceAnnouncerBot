@@ -41,7 +41,7 @@ public class WatchedRace {
 	
 	private ScheduledThreadPoolExecutor exec = new ScheduledThreadPoolExecutor(1); 
 	
-	public WatchedRace(Race race) throws InterruptedException {
+	public WatchedRace(Race race) {
 		this.splits = new ArrayList<>();
 		this.raceId = race.getId();
 		this.game = race.getGame();
@@ -49,12 +49,12 @@ public class WatchedRace {
 		this.srlClient = SpeedrunsliveIRCConnectionManager.getInstance().getIRCClient();
 		this.srlLiveSplitChannelName = "#srl-" + this.raceId + "-livesplit";
 		srlClient.addChannel(this.srlLiveSplitChannelName);
+		Optional<org.kitteh.irc.client.library.element.Channel> livesplitSRL;
 		do {
-			TimeUnit.SECONDS.sleep(5);
-		} while(srlClient.getChannel(this.srlLiveSplitChannelName).isPresent());
+			livesplitSRL = srlClient.getChannel(this.srlLiveSplitChannelName);
+		} while(!livesplitSRL.isPresent());
 
-		srlLiveSplitChannel = srlClient.getChannel(srlLiveSplitChannelName)
-				.orElseThrow(() -> new IllegalArgumentException("LiveSplit channel could not be found"));
+		srlLiveSplitChannel = livesplitSRL.orElseThrow(() -> new IllegalArgumentException("LiveSplit channel could not be found"));
 
 		this.twitchClient = TwitchIRCConnectionManager.getInstance().getIRCClient();
 		exec.scheduleAtFixedRate(new RaceStateChecker(this), 0, 1, TimeUnit.MINUTES);

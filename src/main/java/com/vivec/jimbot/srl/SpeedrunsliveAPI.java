@@ -1,17 +1,22 @@
 package com.vivec.jimbot.srl;
 
-import com.squareup.okhttp.OkHttpClient;
-import com.squareup.okhttp.Request;
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 import com.vivec.jimbot.srl.api.Race;
+import com.vivec.jimbot.srl.api.adapter.RaceDeserializer;
+import okhttp3.OkHttpClient;
+import okhttp3.Request;
+import okhttp3.Response;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.json.JSONArray;
-import org.json.JSONException;
-import org.json.JSONObject;
 
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 import static com.vivec.jimbot.srl.api.PlayerState.ENTERED;
 import static com.vivec.jimbot.srl.api.PlayerState.READY;
@@ -23,26 +28,32 @@ public class SpeedrunsliveAPI {
 	private static final Logger LOG = LogManager.getLogger(SpeedrunsliveAPI.class);
 
 	private static final String JSON_RACES_RACES = "races";
-	private static final String JSON_RACES_COUNT = "count";
-	
+
 	private OkHttpClient httpClient;
 	private Request allRacesRequest;
+	private final Gson gson;
 
 	public SpeedrunsliveAPI() {
 		this.httpClient = new OkHttpClient();
 		this.allRacesRequest = new Request.Builder().url(RequestURLs.REQ_ALL_RACES).build();
+		GsonBuilder gsonBuilder = new GsonBuilder();
+		gsonBuilder.registerTypeAdapter(Race.class, new RaceDeserializer());
+		gson = gsonBuilder.create();
 	}
 	
-	private List<Race> getAllRaces() throws IOException {
+	List<Race> getAllRaces() throws IOException {
 		List<Race> allRaces = new ArrayList<>();
-		JSONObject jsonAllRaces = new JSONObject(httpClient.newCall(allRacesRequest).execute().body().string());
-		
-		JSONArray raceList = jsonAllRaces.getJSONArray(JSON_RACES_RACES);
-		for(int i = 0; i < jsonAllRaces.getInt(JSON_RACES_COUNT); i++) {
-			JSONObject jRace = raceList.getJSONObject(i);
-			Race r = new Race(jRace);
-			allRaces.add(r);
-		}
+		Response allRacesResponse = httpClient.newCall(allRacesRequest).execute();
+
+		JsonParser parser = new JsonParser();
+		JsonObject allRacesJson = parser.parse(Objects.requireNonNull(allRacesResponse.body()).string()).getAsJsonObject();
+
+
+		JsonArray raceList = allRacesJson.get(JSON_RACES_RACES).getAsJsonArray();
+		raceList.forEach(jsonElement -> {
+			Race race = gson.fromJson(jsonElement, Race.class);
+			allRaces.add(race);
+		});
 		return allRaces;
 	}
 	
@@ -57,8 +68,6 @@ public class SpeedrunsliveAPI {
 							.anyMatch(e -> user.equalsIgnoreCase(e.getTwitch())))
 					.findFirst()
 					.orElse(null);
-		} catch (JSONException e) {
-			LOG.error("Error while parsing JSON from SRL API", e);
 		} catch (IOException e) {
 			LOG.error("Error while retrieving data from SRL API", e);
 		}
@@ -67,13 +76,13 @@ public class SpeedrunsliveAPI {
 	
 	public Race getSingleRace(String raceId) {
 		Request singleRaceRequest = new Request.Builder().url(RequestURLs.getRequestForSingleRace(raceId)).build();
-		JSONObject jsonRace = new JSONObject();
 		try {
-			jsonRace = new JSONObject(httpClient.newCall(singleRaceRequest).execute().body().string());
-		} catch (JSONException | IOException e) {
+			Response response = httpClient.newCall(singleRaceRequest).execute();
+			return gson.fromJson(response.body() != null ? response.body().string() : null, Race.class);
+		} catch (IOException e) {
 			LOG.error("Error while retrieving a single race", e);
 		}
-		return new Race(jsonRace);
+		return null;
 	}
 	
 	private static class RequestURLs {

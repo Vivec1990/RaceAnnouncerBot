@@ -1,13 +1,8 @@
 package com.vivec.jimbot.irc.twitch;
 
-import java.io.IOException;
-
-import org.json.JSONException;
-
 import com.cavariux.twitchirc.Chat.Channel;
 import com.cavariux.twitchirc.Chat.User;
 import com.cavariux.twitchirc.Core.TwitchBot;
-
 import com.vivec.jimbot.announcer.RaceAnnouncer;
 import com.vivec.jimbot.announcer.WatchedRace;
 import com.vivec.jimbot.srl.SpeedrunsliveAPI;
@@ -18,7 +13,7 @@ public class TwitchJim extends TwitchBot {
 	private Channel botChannel;
 	private SpeedrunsliveAPI api;
 	
-	public TwitchJim(String username, String oauth) {
+	TwitchJim(String username, String oauth) {
 		this.setUsername(username);
 		this.setOauth_Key(oauth);
 		this.connect();
@@ -36,19 +31,16 @@ public class TwitchJim extends TwitchBot {
 	public void onCommand(User user, Channel channel, String command) {
 		if(channel.equals(this.botChannel)) {
 
+			RaceAnnouncer raceAnnouncer = RaceAnnouncer.getInstance();
 			if ("race".equalsIgnoreCase(command)) {
 				Race race = api.findRaceWithTwitchUser(user.toString());
 				if (race == null) {
 					this.sendMessage("@" + user.toString() + " You are not part of a race on speedrunslive.com right now.", channel);
-				} else if (RaceAnnouncer.getInstance().getRaceByID(race.getId()) != null) {
+				} else if (raceAnnouncer.getRaceByID(race.getId()) != null) {
 					this.sendMessage("@" + user.toString() + " The race you are in is already managed, no need to initialize twice.", channel);
 				} else {
-					try {
-						RaceAnnouncer.getInstance().addRace(new WatchedRace(race));
+						raceAnnouncer.addRace(new WatchedRace(race));
 						this.sendMessage("@" + user.toString() + " The race was added and will be announced once splits are completed by all entrants. Good luck & have fun!", channel);
-					} catch (JSONException | InterruptedException e) {
-						e.printStackTrace();
-					}
 				}
 			} else if (command.startsWith("race ")) {
 				String raceId = command.substring("race ".length());
@@ -56,12 +48,8 @@ public class TwitchJim extends TwitchBot {
 				if (race == null) {
 					this.sendMessage("@" + user.toString() + " No race with the offered ID has been found.", channel);
 				} else {
-					try {
-						RaceAnnouncer.getInstance().addRace(new WatchedRace(race));
+						raceAnnouncer.addRace(new WatchedRace(race));
 						this.sendMessage("@" + user.toString() + " The race was added and will be announced once splits are completed by all entrants. Good luck & have fun!", channel);
-					} catch (JSONException | InterruptedException e) {
-						e.printStackTrace();
-					}
 				}
 			} else if (command.startsWith("addtime ")) { // e.g. !addtime Headbob "Lance" 1:49:23.00
 				String data = command.substring("addtime ".length());
@@ -75,7 +63,7 @@ public class TwitchJim extends TwitchBot {
 				if (race == null) {
 					this.sendMessage(splitRunner + " is not part of a race on speedrunslive.com right now.", channel);
 				} else {
-					WatchedRace wr = RaceAnnouncer.getInstance().getRaceByID(race.getId());
+					WatchedRace wr = raceAnnouncer.getRaceByID(race.getId());
 					if (wr != null) {
 						wr.recordSplitTime(splitName, splitRunner, splitTime);
 						this.sendMessage("Recorded the SplitTime of " + splitRunner + " at " + splitName + " with a time of " + splitTime + ".", channel);
