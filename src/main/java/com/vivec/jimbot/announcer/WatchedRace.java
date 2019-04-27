@@ -27,209 +27,195 @@ import static com.vivec.jimbot.announcer.gamesplits.PKMNREDBLUE.getSplitNameByNa
 
 public class WatchedRace {
 
-	private static final Logger LOG = LogManager.getLogger(WatchedRace.class);
-	private final List<Entrant> runnersConnectedThroughLiveSplit = new ArrayList<>();
-	private final List<String> announcedSplits = new ArrayList<>();
-	private Game game;
-	private List<RaceSplit> splits;
-	private String raceId;
-	private Client srlClient;
-	private TwitchJim twitchClient;
-	private SpeedrunsliveAPI api;
-	private String srlLiveSplitChannelName;
-	private org.kitteh.irc.client.library.element.Channel srlLiveSplitChannel;
-	
-	private ScheduledThreadPoolExecutor exec = new ScheduledThreadPoolExecutor(1); 
-	
-	public WatchedRace(Race race) {
-		this.splits = new ArrayList<>();
-		this.raceId = race.getId();
-		this.game = race.getGame();
-		this.api = new SpeedrunsliveAPI();
-		this.srlClient = SpeedrunsliveIRCConnectionManager.getInstance().getIRCClient();
-		this.srlLiveSplitChannelName = "#srl-" + this.raceId + "-livesplit";
-		srlClient.addChannel(this.srlLiveSplitChannelName);
-		Optional<org.kitteh.irc.client.library.element.Channel> livesplitSRL;
-		do {
-			livesplitSRL = srlClient.getChannel(this.srlLiveSplitChannelName);
-		} while(!livesplitSRL.isPresent());
+    private static final Logger LOG = LogManager.getLogger(WatchedRace.class);
+    private final List<Entrant> runnersConnectedThroughLiveSplit = new ArrayList<>();
+    private final List<String> announcedSplits = new ArrayList<>();
+    private final Game game;
+    private final List<RaceSplit> splits = new ArrayList<>();
+    private final String raceId;
+    private final Client srlClient = SpeedrunsliveIRCConnectionManager.getInstance().getIRCClient();
+    private final TwitchJim twitchClient = TwitchIRCConnectionManager.getInstance().getIRCClient();
+    private final SpeedrunsliveAPI api = new SpeedrunsliveAPI();
+    private final String srlLiveSplitChannelName;
+    private final org.kitteh.irc.client.library.element.Channel srlLiveSplitChannel;
 
-		srlLiveSplitChannel = livesplitSRL.orElseThrow(() -> new IllegalArgumentException("LiveSplit channel could not be found"));
+    private ScheduledThreadPoolExecutor exec = new ScheduledThreadPoolExecutor(1);
 
-		this.twitchClient = TwitchIRCConnectionManager.getInstance().getIRCClient();
-		exec.scheduleAtFixedRate(new RaceStateChecker(this), 0, 1, TimeUnit.MINUTES);
-	}
-	
-	private void initialize() {
-		Race race = this.api.getSingleRace(this.raceId);
-		this.srlClient.getEventManager().registerEventListener(new RaceSplitTimeListener());
-		List<String> usersInLiveSplitChannel = this.srlLiveSplitChannel.getNicknames();
-		for(Entrant e : race.getEntrants()) {
-			if(usersInLiveSplitChannel.contains(e.getUserName())) {
-				this.runnersConnectedThroughLiveSplit.add(e);
-				this.twitchClient.joinChannel(e.getTwitch().toLowerCase());
-				this.twitchClient.sendMessage(CommonMessages.CHANNEL_ANNOUNCEMENT_JOIN, Channel.getChannel(e.getTwitch().toLowerCase(), this.twitchClient));
-			}
-		}
-	}
-	
-	public void recordSplitTime(String splitName, String user, String time) {
-		Entrant e = Optional.ofNullable(findEntrantByUsername(user))
-				.orElse(getRunnerInRaceFromAPI(user));
-		if(e != null) {
-			if(this.getGame().getId() == 6) {
-				String standardSplitName = getSplitNameByNameOrAlias(splitName);
-				if(standardSplitName != null) {
-					LOG.info("Found standardized name for {}, using {}", splitName, standardSplitName);
-					splitName = standardSplitName;
-				}
-			}
-			RaceSplit raceSplit = Optional.ofNullable(findRaceSplitByName(splitName))
-					.orElse(new RaceSplit(splitName));
-			raceSplit.addTime(e, time);
-			splits.add(raceSplit);
+    public WatchedRace(Race race) {
+        raceId = race.getId();
+        game = race.getGame();
+        srlLiveSplitChannelName = "#srl-" + raceId + "-livesplit";
+        srlClient.addChannel(srlLiveSplitChannelName);
+        Optional<org.kitteh.irc.client.library.element.Channel> livesplitSRL;
+        do {
+            livesplitSRL = srlClient.getChannel(srlLiveSplitChannelName);
+        } while (!livesplitSRL.isPresent());
 
-			// check all splits in case someone dropped as last runner
-			splits.forEach(this::announceSplitIfComplete);
-		}
-	}
-	
-	private Entrant getRunnerInRaceFromAPI(String user) {
-		Race race = api.getSingleRace(this.raceId);
-		for(Entrant e : race.getEntrants()) {
-			if(e.getUserName().equalsIgnoreCase(user)) {
-				return e;
-			}
-		}
-		return null;
-	}
-	
-	private void announceSplitIfComplete(RaceSplit rs) {
-		if(this.announcedSplits.contains(rs.getSplitName())) {
-			LOG.warn("Split {} has already been announced, not announcing again.", rs.getSplitName());
-			return;
-		}
-		if(this.getGame().getId() == 6) {
-			PKMNREDBLUE split = getSplitDataByNameOrAlias(rs.getSplitName());
-			if(split != null && !split.isAnnounce()) {
-				LOG.debug("Split {} is configured to not be announced.", split.getName());
-				return;
-			}
-		}
-		Race race = this.api.getSingleRace(this.raceId);
-		for(Entrant e : this.runnersConnectedThroughLiveSplit) {
+        srlLiveSplitChannel = livesplitSRL.orElseThrow(() -> new IllegalArgumentException("LiveSplit channel could not be found"));
+
+        exec.scheduleAtFixedRate(new RaceStateChecker(this), 0, 1, TimeUnit.MINUTES);
+    }
+
+    public void recordSplitTime(String splitName, String user, String time) {
+        Entrant e = Optional.ofNullable(findEntrantByUsername(user))
+                .orElse(getRunnerInRaceFromAPI(user));
+        if (e != null) {
+            if (getGame().getId() == 6) {
+                String standardSplitName = getSplitNameByNameOrAlias(splitName);
+                if (standardSplitName != null) {
+                    LOG.info("Found standardized name for {}, using {}", splitName, standardSplitName);
+                    splitName = standardSplitName;
+                }
+            }
+            RaceSplit raceSplit = Optional.ofNullable(findRaceSplitByName(splitName))
+                    .orElse(new RaceSplit(splitName));
+            raceSplit.addTime(e, time);
+            getSplits().add(raceSplit);
+
+            // check all splits in case someone dropped as last runner
+            getSplits().forEach(this::announceSplitIfComplete);
+        }
+    }
+
+    private Entrant getRunnerInRaceFromAPI(String user) {
+        Race race = api.getSingleRace(raceId);
+        return race.getEntrants()
+                .stream()
+                .filter(e -> e.getUserName().equalsIgnoreCase(user))
+                .findFirst()
+                .orElse(null);
+    }
+
+    private void announceSplitIfComplete(RaceSplit rs) {
+        if (announcedSplits.contains(rs.getSplitName())) {
+            LOG.warn("Split {} has already been announced, not announcing again.", rs.getSplitName());
+            return;
+        }
+        if (getGame().getId() == 6) {
+            PKMNREDBLUE split = getSplitDataByNameOrAlias(rs.getSplitName());
+            if (split != null && !split.isAnnounce()) {
+                LOG.debug("Split {} is configured to not be announced.", split.getName());
+                return;
+            }
+        }
+        Race race = api.getSingleRace(raceId);
+        for (Entrant e : runnersConnectedThroughLiveSplit) {
             Optional.ofNullable(findEntrantByUsername(e.getUserName(), race.getEntrants()))
                     .ifPresent(e::updateData);
-			if(e.getState() == PlayerState.FORFEIT) {
-				continue;
-			}
-			if(rs.findTimeForRunner(e) == null) {
-				LOG.info(" {}is not finished with the split {} yet, not announcning.", e.getDisplayName(), rs.getSplitName());
-				return;
-			}
-		}
-		
-		LOG.info("Announcing split {}", rs.getSplitName());
-		
-		StringBuilder message = new StringBuilder("Split " + rs.getSplitName() + " completed. Times: ");
-		int position = 0;
-		for(RaceSplit.SplitTime st : rs.getSplitTimes()) {
-			message.append(++position)
-					.append(". ")
-					.append(st.getEntrantName())
-					.append(" : ")
-					.append(st.getDisplayTime())
-					.append(" | ");
-		}
-		
-		for(Entrant e : this.getRunnersConnectedThroughLiveSplit()) {
-			if(e.getState() != PlayerState.FORFEIT) {
-				LOG.info("Sending times to {}", e.getTwitch());
-				this.twitchClient.sendMessage(message, Channel.getChannel(e.getTwitch().toLowerCase(), this.twitchClient));
-			}
-		}
-		this.announcedSplits.add(rs.getSplitName());
-	}
-	
-	private Entrant findEntrantByUsername(String user) {
-		for(Entrant e : this.runnersConnectedThroughLiveSplit) {
-			if(e.getUserName().equalsIgnoreCase(user)) {
-				return e;
-			}
-		}
-		return null;
-	}
-	
-	private Entrant findEntrantByUsername(String user, List<Entrant> entrants) {
-		for(Entrant e : entrants) {
-			if(e.getUserName().equalsIgnoreCase(user)) {
-				return e;
-			}
-		}
-		return null;
-	}
-	
-	private RaceSplit findRaceSplitByName(String splitName) {
-		for(RaceSplit rs : this.splits) {
-			if(rs.getSplitName().equalsIgnoreCase(splitName)) {
-				return rs;
-			}
-		}
-		return null;
-	}
-	
-	void finishRace() {
-		LOG.info("Finishing up race, parting all channels associated with this race.");
-		for(Entrant e : this.getRunnersConnectedThroughLiveSplit()) {
-			this.twitchClient.partChannel(e.getTwitch());
-			LOG.debug("Left channel {}", e.getTwitch());
-		}
-		this.srlClient.removeChannel(srlLiveSplitChannelName);
-	}
-	
-	List<Entrant> getRunnersConnectedThroughLiveSplit() {
-		return runnersConnectedThroughLiveSplit;
-	}
-	
-	private Game getGame() {
-		return game;
-	}
+            if (e.getState() == PlayerState.FORFEIT) {
+                continue;
+            }
+            if (rs.findTimeForRunner(e) == null) {
+                LOG.info(" {}is not finished with the split {} yet, not announcning.", e.getDisplayName(), rs.getSplitName());
+                return;
+            }
+        }
 
-	public List<RaceSplit> getSplits() {
-		return splits;
-	}
+        LOG.info("Announcing split {}", rs.getSplitName());
 
-	String getRaceId() {
-		return raceId;
-	}
+        StringBuilder message = new StringBuilder("Split " + rs.getSplitName() + " completed. Times: ");
+        int position = 0;
+        for (RaceSplit.SplitTime st : rs.getSplitTimes()) {
+            message.append(++position)
+                    .append(". ")
+                    .append(st.getEntrantName())
+                    .append(" : ")
+                    .append(st.getDisplayTime())
+                    .append(" | ");
+        }
 
-	public SpeedrunsliveAPI getApi() {
-		return api;
-	}
+        getRunnersConnectedThroughLiveSplit()
+                .stream()
+                .filter(e -> PlayerState.FORFEIT != e.getState())
+                .forEach(e -> {
+                    LOG.info("Sending times to {}", e.getTwitch());
+                    twitchClient.sendMessage(message, Channel.getChannel(e.getTwitch().toLowerCase(), twitchClient));
+                });
+        announcedSplits.add(rs.getSplitName());
+    }
 
-	public ScheduledThreadPoolExecutor getExec() {
-		return exec;
-	}
+    private Entrant findEntrantByUsername(String user) {
+        return findEntrantByUsername(user, runnersConnectedThroughLiveSplit);
+    }
 
-	private class RaceStateChecker implements Runnable{
+    private Entrant findEntrantByUsername(String user, List<Entrant> entrants) {
+        return entrants.stream()
+                .filter(e -> e.getUserName().equalsIgnoreCase(user))
+                .findFirst()
+                .orElse(null);
+    }
 
-		private WatchedRace wr;
-		RaceStateChecker(WatchedRace wr) {
-			this.wr = wr;
-		}
-		
-		@Override
-		public void run() {
-			Race race = wr.api.getSingleRace(wr.raceId);
-			if(race.getState() == RaceState.IN_PROGRESS) {
-				LOG.info("Initializing the race");
-				wr.initialize();
-				exec.shutdown();
-			} else {
-				LOG.info("Race {} has not started yet, waiting a minute.", wr.raceId);
-			}
-		}
-		
-	}
-	
+    private RaceSplit findRaceSplitByName(String splitName) {
+        return getSplits().stream()
+                .filter(rs -> rs.getSplitName().equalsIgnoreCase(splitName))
+                .findFirst()
+                .orElse(null);
+    }
+
+    void finishRace() {
+        LOG.info("Finishing up race, parting all channels associated with this race.");
+        getRunnersConnectedThroughLiveSplit()
+                .forEach(e -> {
+                    twitchClient.partChannel(e.getTwitch());
+                    LOG.debug("Left channel {}", e.getTwitch());
+                });
+        srlClient.removeChannel(srlLiveSplitChannelName);
+    }
+
+    List<Entrant> getRunnersConnectedThroughLiveSplit() {
+        return runnersConnectedThroughLiveSplit;
+    }
+
+    private Game getGame() {
+        return game;
+    }
+
+    private List<RaceSplit> getSplits() {
+        return splits;
+    }
+
+    String getRaceId() {
+        return raceId;
+    }
+
+    public SpeedrunsliveAPI getApi() {
+        return api;
+    }
+
+    private class RaceStateChecker implements Runnable {
+
+        private WatchedRace wr;
+
+        RaceStateChecker(WatchedRace wr) {
+            this.wr = wr;
+        }
+
+        @Override
+        public void run() {
+            Race race = wr.api.getSingleRace(wr.raceId);
+            if (race.getState() == RaceState.IN_PROGRESS) {
+                LOG.info("Initializing the race");
+                initialize();
+                exec.shutdown();
+            } else {
+                LOG.info("Race {} has not started yet, waiting a minute.", wr.raceId);
+            }
+        }
+
+        private void initialize() {
+            Race race = api.getSingleRace(raceId);
+            srlClient.getEventManager().registerEventListener(new RaceSplitTimeListener());
+            List<String> usersInLiveSplitChannel = srlLiveSplitChannel.getNicknames();
+            race.getEntrants()
+                    .stream()
+                    .filter(e -> usersInLiveSplitChannel.contains(e.getUserName()))
+                    .forEach(e -> {
+                        runnersConnectedThroughLiveSplit.add(e);
+                        twitchClient.joinChannel(e.getTwitch().toLowerCase());
+                        twitchClient.sendMessage(CommonMessages.CHANNEL_ANNOUNCEMENT_JOIN, Channel.getChannel(e.getTwitch().toLowerCase(), twitchClient));
+                    });
+        }
+
+    }
+
 }
