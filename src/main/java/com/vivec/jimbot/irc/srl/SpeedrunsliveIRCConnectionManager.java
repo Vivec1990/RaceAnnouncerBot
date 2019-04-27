@@ -8,7 +8,7 @@ public class SpeedrunsliveIRCConnectionManager {
 	private static SpeedrunsliveIRCConnectionManager instance;
 	private Client ircClient;
 	
-	public SpeedrunsliveIRCConnectionManager() {
+	private SpeedrunsliveIRCConnectionManager() {
 		ircClient = Client.builder().nick(CredentialManager.getInstance().getBotUsername()).serverHost("irc.speedrunslive.com").serverPort(6667).secure(false).serverPassword(CredentialManager.getInstance().getBotSRLPass()).build();
 		ircClient.connect();
 	}
