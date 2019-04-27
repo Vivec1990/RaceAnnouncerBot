@@ -1,3 +1,4 @@
+[![Build Status](https://travis-ci.org/Vivec1990/RaceAnnouncerBot.svg?branch=master)](https://travis-ci.org/Vivec1990/RaceAnnouncerBot)
 # RaceAnnouncerBot
 ## General Idea
 
