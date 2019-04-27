@@ -5,10 +5,10 @@ public class CredentialManager {
 	private String botTwitchOAuth;
 	private String botSRLPass;
 	
-	private static CredentialManager INSTANCE = new CredentialManager();
+	private static CredentialManager instance = new CredentialManager();
 	
 	public static CredentialManager getInstance() {
-		return INSTANCE;
+		return instance;
 	}
 	
 	private CredentialManager() {

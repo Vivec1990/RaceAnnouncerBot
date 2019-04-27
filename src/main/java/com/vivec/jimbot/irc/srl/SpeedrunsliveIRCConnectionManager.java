@@ -5,7 +5,7 @@ import org.kitteh.irc.client.library.Client;
 
 public class SpeedrunsliveIRCConnectionManager {
 
-	private static SpeedrunsliveIRCConnectionManager INSTANCE;
+	private static SpeedrunsliveIRCConnectionManager instance;
 	private Client ircClient;
 	
 	public SpeedrunsliveIRCConnectionManager() {
@@ -18,10 +18,10 @@ public class SpeedrunsliveIRCConnectionManager {
 	}
 	
 	public static SpeedrunsliveIRCConnectionManager getInstance() {
-		if(INSTANCE == null) {
-			INSTANCE = new SpeedrunsliveIRCConnectionManager();
+		if(instance == null) {
+			instance = new SpeedrunsliveIRCConnectionManager();
 		}
-		return INSTANCE;
+		return instance;
 	}
 	
 }

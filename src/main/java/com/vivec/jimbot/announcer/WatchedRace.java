@@ -1,12 +1,7 @@
 package com.vivec.jimbot.announcer;
 
-import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
-import java.util.concurrent.ScheduledThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
-
+import com.cavariux.twitchirc.Chat.Channel;
+import com.vivec.jimbot.announcer.gamesplits.PKMNREDBLUE;
 import com.vivec.jimbot.irc.srl.RaceSplitTimeListener;
 import com.vivec.jimbot.irc.srl.SpeedrunsliveIRCConnectionManager;
 import com.vivec.jimbot.irc.twitch.TwitchIRCConnectionManager;
@@ -17,17 +12,24 @@ import com.vivec.jimbot.srl.api.Game;
 import com.vivec.jimbot.srl.api.PlayerState;
 import com.vivec.jimbot.srl.api.Race;
 import com.vivec.jimbot.srl.api.RaceState;
-import org.json.JSONException;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.kitteh.irc.client.library.Client;
 
-import com.cavariux.twitchirc.Chat.Channel;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 
-import com.vivec.jimbot.announcer.gamesplits.PKMNREDBLUE;
+import static com.vivec.jimbot.announcer.gamesplits.PKMNREDBLUE.getSplitDataByNameOrAlias;
+import static com.vivec.jimbot.announcer.gamesplits.PKMNREDBLUE.getSplitNameByNameOrAlias;
 
 public class WatchedRace {
-	
-	private List<Entrant> runnersConnectedThroughLiveSplit = new ArrayList<Entrant>();
-	private List<String> announcedSplits = new ArrayList<String>();
+
+	private static final Logger LOG = LogManager.getLogger(WatchedRace.class);
+	private final List<Entrant> runnersConnectedThroughLiveSplit = new ArrayList<>();
+	private final List<String> announcedSplits = new ArrayList<>();
 	private Game game;
 	private List<RaceSplit> splits;
 	private String raceId;
@@ -72,30 +74,23 @@ public class WatchedRace {
 	}
 	
 	public void recordSplitTime(String splitName, String user, String time) {
-		Entrant e = findEntrantByUsername(user);
-		if(e == null) {
-			e = getRunnerInRaceFromAPI(user);
-			this.addRunner(e);
-		}
+		Entrant e = Optional.ofNullable(findEntrantByUsername(user))
+				.orElse(getRunnerInRaceFromAPI(user));
 		if(e != null) {
 			if(this.getGame().getId() == 6) {
-				String standardSplitName = PKMNREDBLUE.getSplitNameByNameOrAlias(splitName);
+				String standardSplitName = getSplitNameByNameOrAlias(splitName);
 				if(standardSplitName != null) {
-					System.out.println("Found standardized name for " + splitName + ", using " + standardSplitName);
+					LOG.info("Found standardized name for {}, using {}", splitName, standardSplitName);
 					splitName = standardSplitName;
 				}
 			}
-			RaceSplit rs = findRaceSplitByName(splitName);
-			if(rs == null) {
-				rs = new RaceSplit(splitName);
-				this.splits.add(rs);
-			}
-			rs.addTime(e, time);
+			RaceSplit raceSplit = Optional.ofNullable(findRaceSplitByName(splitName))
+					.orElse(new RaceSplit(splitName));
+			raceSplit.addTime(e, time);
+			splits.add(raceSplit);
 
 			// check all splits in case someone dropped as last runner
-			for(RaceSplit rs2 : this.splits) {
-				this.announceSplitIfComplete(rs2);
-			}
+			splits.forEach(this::announceSplitIfComplete);
 		}
 	}
 	
@@ -111,13 +106,13 @@ public class WatchedRace {
 	
 	private void announceSplitIfComplete(RaceSplit rs) {
 		if(this.announcedSplits.contains(rs.getSplitName())) {
-			System.out.println("Split " + rs.getSplitName() + " has already been announced, not announcing again.");
+			LOG.warn("Split {} has already been announced, not announcing again.", rs.getSplitName());
 			return;
 		}
 		if(this.getGame().getId() == 6) {
-			PKMNREDBLUE split = PKMNREDBLUE.getSplitDataByNameOrAlias(rs.getSplitName());
+			PKMNREDBLUE split = getSplitDataByNameOrAlias(rs.getSplitName());
 			if(split != null && !split.isAnnounce()) {
-				System.out.println("Split " + split.getName() + " is configured to not be announced.");
+				LOG.debug("Split {} is configured to not be announced.", split.getName());
 				return;
 			}
 		}
@@ -129,22 +124,27 @@ public class WatchedRace {
 				continue;
 			}
 			if(rs.findTimeForRunner(e) == null) {
-				System.out.println(e.getDisplayName() + " is not finished with the split " + rs.getSplitName() + " yet, not announcning.");
+				LOG.info(" {}is not finished with the split {} yet, not announcning.", e.getDisplayName(), rs.getSplitName());
 				return;
 			}
 		}
 		
-		System.out.println("Announcing split " + rs.getSplitName());
+		LOG.info("Announcing split {}", rs.getSplitName());
 		
-		String message = "Split " + rs.getSplitName() + " completed. Times: ";
+		StringBuilder message = new StringBuilder("Split " + rs.getSplitName() + " completed. Times: ");
 		int position = 0;
 		for(RaceSplit.SplitTime st : rs.getSplitTimes()) {
-			message += ++position + ". " + st.getEntrantName() + " : " + st.getDisplayTime() + " | ";
+			message.append(++position)
+					.append(". ")
+					.append(st.getEntrantName())
+					.append(" : ")
+					.append(st.getDisplayTime())
+					.append(" | ");
 		}
 		
 		for(Entrant e : this.getRunnersConnectedThroughLiveSplit()) {
 			if(e.getState() != PlayerState.FORFEIT) {
-				System.out.println("Sending times to " + e.getTwitch());
+				LOG.info("Sending times to {}", e.getTwitch());
 				this.twitchClient.sendMessage(message, Channel.getChannel(e.getTwitch().toLowerCase(), this.twitchClient));
 			}
 		}
@@ -178,20 +178,20 @@ public class WatchedRace {
 		return null;
 	}
 	
-	public void finishRace() {
-		System.out.println("Finishing up race, parting all channels associated with this race.");
+	void finishRace() {
+		LOG.info("Finishing up race, parting all channels associated with this race.");
 		for(Entrant e : this.getRunnersConnectedThroughLiveSplit()) {
 			this.twitchClient.partChannel(e.getTwitch());
-			System.out.println("Left channel " + e.getTwitch());
+			LOG.debug("Left channel {}", e.getTwitch());
 		}
 		this.srlClient.removeChannel(srlLiveSplitChannelName);
 	}
 	
-	public List<Entrant> getRunnersConnectedThroughLiveSplit() {
+	List<Entrant> getRunnersConnectedThroughLiveSplit() {
 		return runnersConnectedThroughLiveSplit;
 	}
 	
-	public Game getGame() {
+	private Game getGame() {
 		return game;
 	}
 
@@ -199,7 +199,7 @@ public class WatchedRace {
 		return splits;
 	}
 
-	public String getRaceId() {
+	String getRaceId() {
 		return raceId;
 	}
 
@@ -210,16 +210,11 @@ public class WatchedRace {
 	public ScheduledThreadPoolExecutor getExec() {
 		return exec;
 	}
-	
-	public void addRunner(Entrant e) {
-		this.getRunnersConnectedThroughLiveSplit().add(e);
-		this.twitchClient.joinChannel(e.getTwitch().toLowerCase());
-	}
-	
+
 	private class RaceStateChecker implements Runnable{
 
 		private WatchedRace wr;
-		public RaceStateChecker(WatchedRace wr) {
+		RaceStateChecker(WatchedRace wr) {
 			this.wr = wr;
 		}
 		
@@ -227,11 +222,11 @@ public class WatchedRace {
 		public void run() {
 			Race race = wr.api.getSingleRace(wr.raceId);
 			if(race.getState() == RaceState.IN_PROGRESS) {
-				System.out.println("Initializing the race");
+				LOG.info("Initializing the race");
 				wr.initialize();
 				exec.shutdown();
 			} else {
-				System.out.println("Race " + wr.raceId + " has not started yet, waiting a minute. " + LocalDateTime.now().toString());
+				LOG.info("Race {} has not started yet, waiting a minute.", wr.raceId);
 			}
 		}
 		

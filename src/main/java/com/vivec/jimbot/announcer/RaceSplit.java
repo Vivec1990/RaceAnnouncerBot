@@ -1,43 +1,46 @@
 package com.vivec.jimbot.announcer;
 
-import java.util.Collections;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.*;
-
 import com.vivec.jimbot.srl.api.Entrant;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.List;
 
 public class RaceSplit {
 
+	private static final Logger LOG = LogManager.getLogger(RaceSplit.class);
+
 	private String splitName;
-	private List<SplitTime> splitTimes = new ArrayList<SplitTime>();
+	private final List<SplitTime> splitTimes = new ArrayList<>();
 	
-	public RaceSplit(String splitName) {
+	RaceSplit(String splitName) {
 		this.splitName = splitName;
 	}
 	
-	public void addTime(Entrant runner, String time) {
+	void addTime(Entrant runner, String time) {
 		for(SplitTime sTime: splitTimes) {
 			if(runner.getDisplayName().equalsIgnoreCase(sTime.getEntrantName())) {
 				sTime.updateTime(time);
-				System.out.println("Runner " + sTime.getEntrantName() + " already had a time recorded, updated the existing time.");
+				LOG.info("Runner {} already had a time recorded, updated the existing time.", sTime.getEntrantName() );
 				return;
 			}
 		}
 		splitTimes.add(new SplitTime(runner, time));
-		Collections.sort(splitTimes, new SplitTimeComparator());
-		System.out.println("Time recorded for split [" + this.splitName + "] for runner [" + runner.getDisplayName() + "]. The time was " + time);
+		splitTimes.sort(new SplitTimeComparator());
+		LOG.info("Time recorded for split [{}] for runner [{}]. The time was {}", this.splitName, runner.getDisplayName(), time);
 	}
 	
-	public String getSplitName() {
+	String getSplitName() {
 		return splitName;
 	}
 
-	public List<SplitTime> getSplitTimes() {
+	List<SplitTime> getSplitTimes() {
 		return splitTimes;
 	}
 	
-	public SplitTime findTimeForRunner(Entrant e) {
+	SplitTime findTimeForRunner(Entrant e) {
 		for(SplitTime st : this.getSplitTimes()) {
 			if(st.runner.getUserName().equals(e.getUserName())) {
 				return st;
@@ -64,23 +67,20 @@ public class RaceSplit {
 			return false;
 		RaceSplit other = (RaceSplit) obj;
 		if (splitName == null) {
-			if (other.splitName != null)
-				return false;
-		} else if (!splitName.equals(other.splitName))
-			return false;
-		return true;
+			return other.splitName == null;
+		} else return splitName.equals(other.splitName);
 	}
 
 	public class SplitTime {
 		private Entrant runner;
 		private long time;
 			
-		public SplitTime(Entrant runner, String time) {
+		SplitTime(Entrant runner, String time) {
 			this.runner = runner;
 			this.time = parseTime(time);
 		}
 		
-		public void updateTime(String time) {
+		void updateTime(String time) {
 			this.time = parseTime(time);
 		}
 		
@@ -99,11 +99,11 @@ public class RaceSplit {
 			return timeInMillis;
 		}
 		
-		public String getEntrantName() {
+		String getEntrantName() {
 			return runner.getDisplayName();
 		}
 		
-		public String getDisplayTime() {
+		String getDisplayTime() {
 			long second = (this.time / 1000) % 60;
 			long minute = (this.time / (1000 * 60)) % 60;
 			long hour = (this.time / (1000 * 60 * 60));
@@ -115,7 +115,7 @@ public class RaceSplit {
 			}
 		}
 
-		public long getTime() { return this.time; }
+		long getTime() { return this.time; }
 		
 		@Override
 		public String toString() {

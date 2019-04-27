@@ -9,22 +9,25 @@ import com.vivec.jimbot.srl.SpeedrunsliveAPI;
 import com.vivec.jimbot.srl.api.Entrant;
 import com.vivec.jimbot.srl.api.Race;
 import com.vivec.jimbot.srl.api.RaceState;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 public class RaceAnnouncer {
 
+	private static final Logger LOG = LogManager.getLogger(RaceAnnouncer.class);
+	private static RaceAnnouncer instance;
+
 	private List<WatchedRace> watchedRaces;
-	
-	private static RaceAnnouncer INSTANCE;
-	
+
 	public static synchronized RaceAnnouncer getInstance() {
-		if(INSTANCE == null) {
-			INSTANCE = new RaceAnnouncer();
+		if(instance == null) {
+			instance = new RaceAnnouncer();
 		}
-		return INSTANCE;
+		return instance;
 	}
 	
 	private RaceAnnouncer() {
-		this.watchedRaces = new ArrayList<WatchedRace>();
+		this.watchedRaces = new ArrayList<>();
 		ScheduledThreadPoolExecutor exec = new ScheduledThreadPoolExecutor(1);
 		exec.scheduleAtFixedRate(new RaceWatcherCleanup(), 5, 5, TimeUnit.MINUTES);
 	}
@@ -57,7 +60,7 @@ public class RaceAnnouncer {
 		
 		@Override
 		public void run() {
-			System.out.println("Cleaning up finished races...");
+			LOG.info("Cleaning up finished races...");
 			SpeedrunsliveAPI api = new SpeedrunsliveAPI();
 			for(WatchedRace wr : watchedRaces) {
 				Race jRace = api.getSingleRace(wr.getRaceId());
