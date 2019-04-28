@@ -1,9 +1,9 @@
 package com.vivec.jimbot.srl;
 
 import com.vivec.jimbot.srl.api.Race;
-import jdk.nashorn.internal.ir.annotations.Ignore;
 import okhttp3.mock.MockInterceptor;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
@@ -24,7 +24,7 @@ class SpeedrunsliveAPITest {
     }
 
     @Test
-    @Ignore
+    @Disabled
     void shouldMarshallToRace() {
         String json = "{\n" +
                 "  \"id\": \"o4vqw\",\n" +
