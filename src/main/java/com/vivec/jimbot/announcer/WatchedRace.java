@@ -57,6 +57,7 @@ public class WatchedRace {
         PKMNREDBLUE standardSplitData = PKMNREDBLUE.getSplitDataByNameOrAlias(splitName);
         Entrant e = Optional.ofNullable(findEntrantByUsername(user))
                 .orElse(getRunnerInRaceFromAPI(user));
+        addEntrantToLiveSplitCollection(e);
         if (e != null) {
             if (getGame().getId() == 6) {
                 String standardSplitName = getSplitNameByNameOrAlias(splitName);
@@ -71,7 +72,14 @@ public class WatchedRace {
             getSplits().add(raceSplit);
 
             // check all splits in case someone dropped as last runner
-            getSplits().forEach(this::announceSplitIfComplete);
+        }
+        getSplits().forEach(this::announceSplitIfComplete);
+    }
+
+    private void addEntrantToLiveSplitCollection(Entrant e) {
+        if (runnersConnectedThroughLiveSplit.stream()
+                .noneMatch(ent -> ent.getUserName().equalsIgnoreCase(e.getUserName()))) {
+            joinTwitchChannelAndSendWelcome(e);
         }
     }
 
@@ -244,11 +252,7 @@ public class WatchedRace {
             race.getEntrants()
                     .stream()
                     .filter(e -> usersInLiveSplitChannel.contains(e.getUserName().toLowerCase()))
-                    .forEach(e -> {
-                        runnersConnectedThroughLiveSplit.add(e);
-                        twitchClient.joinChannel(e.getTwitch().toLowerCase());
-                        twitchClient.sendMessage(CommonMessages.CHANNEL_ANNOUNCEMENT_JOIN, Channel.getChannel(e.getTwitch().toLowerCase(), twitchClient));
-                    });
+                    .forEach(WatchedRace.this::joinTwitchChannelAndSendWelcome);
         }
 
         private void initLiveSplitChannel() {
@@ -265,6 +269,12 @@ public class WatchedRace {
             srlLiveSplitChannel = livesplitSRL.orElseThrow(() -> new IllegalArgumentException("LiveSplit channel could not be found"));
         }
 
+    }
+
+    private void joinTwitchChannelAndSendWelcome(Entrant e) {
+        runnersConnectedThroughLiveSplit.add(e);
+        twitchClient.joinChannel(e.getTwitch().toLowerCase());
+        twitchClient.sendMessage(CommonMessages.CHANNEL_ANNOUNCEMENT_JOIN, Channel.getChannel(e.getTwitch().toLowerCase(), twitchClient));
     }
 
 }
