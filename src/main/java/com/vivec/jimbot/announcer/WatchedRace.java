@@ -37,7 +37,7 @@ public class WatchedRace {
     private final TwitchJim twitchClient = TwitchIRCConnectionManager.getInstance().getIRCClient();
     private final SpeedrunsliveAPI api = new SpeedrunsliveAPI();
     private final String srlLiveSplitChannelName;
-    private final org.kitteh.irc.client.library.element.Channel srlLiveSplitChannel;
+    private org.kitteh.irc.client.library.element.Channel srlLiveSplitChannel;
 
     private ScheduledThreadPoolExecutor exec = new ScheduledThreadPoolExecutor(1);
 
@@ -46,13 +46,6 @@ public class WatchedRace {
         game = race.getGame();
         srlLiveSplitChannelName = "#srl-" + raceId + "-livesplit";
         srlClient.addChannel(srlLiveSplitChannelName);
-        Optional<org.kitteh.irc.client.library.element.Channel> livesplitSRL;
-        do {
-            livesplitSRL = srlClient.getChannel(srlLiveSplitChannelName);
-        } while (!livesplitSRL.isPresent());
-
-        srlLiveSplitChannel = livesplitSRL.orElseThrow(() -> new IllegalArgumentException("LiveSplit channel could not be found"));
-
         exec.scheduleAtFixedRate(new RaceStateChecker(this), 0, 1, TimeUnit.MINUTES);
     }
 
@@ -205,15 +198,30 @@ public class WatchedRace {
         private void initialize() {
             Race race = api.getSingleRace(raceId);
             srlClient.getEventManager().registerEventListener(new RaceSplitTimeListener());
+            initLiveSplitChannel();
             List<String> usersInLiveSplitChannel = srlLiveSplitChannel.getNicknames();
             race.getEntrants()
                     .stream()
-                    .filter(e -> usersInLiveSplitChannel.contains(e.getUserName()))
+                    .filter(e -> usersInLiveSplitChannel.contains(e.getUserName().toLowerCase()))
                     .forEach(e -> {
                         runnersConnectedThroughLiveSplit.add(e);
                         twitchClient.joinChannel(e.getTwitch().toLowerCase());
                         twitchClient.sendMessage(CommonMessages.CHANNEL_ANNOUNCEMENT_JOIN, Channel.getChannel(e.getTwitch().toLowerCase(), twitchClient));
                     });
+        }
+
+        private void initLiveSplitChannel() {
+            Optional<org.kitteh.irc.client.library.element.Channel> livesplitSRL;
+            do {
+                livesplitSRL = srlClient.getChannel(srlLiveSplitChannelName);
+                try {
+                    TimeUnit.SECONDS.sleep(5);
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                }
+            } while (!livesplitSRL.isPresent());
+
+            srlLiveSplitChannel = livesplitSRL.orElseThrow(() -> new IllegalArgumentException("LiveSplit channel could not be found"));
         }
 
     }
