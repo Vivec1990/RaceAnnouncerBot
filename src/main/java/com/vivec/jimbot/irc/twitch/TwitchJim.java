@@ -36,9 +36,9 @@ public class TwitchJim extends TwitchBot {
 
             RaceAnnouncer raceAnnouncer = RaceAnnouncer.getInstance();
             if ("race".equalsIgnoreCase(command)) {
-                findRaceForUser(user.toString(), channel, raceAnnouncer);
+                addRaceForUserExecutingCommand(user.toString(), channel, raceAnnouncer);
             } else if (command.startsWith("race ")) {
-                findRaceWithId(user, channel, command, raceAnnouncer);
+                addRaceWithId(user, channel, command, raceAnnouncer);
             } else if (command.startsWith("addtime ")) { // e.g. !addtime Headbob "Lance" 1:49:23.00
                 manuallyAddTime(channel, command, raceAnnouncer);
             }
@@ -69,7 +69,7 @@ public class TwitchJim extends TwitchBot {
         String splitName = parts[1].trim();
         String splitTime = parts[2].trim();
 
-        Race race = findRaceForUser(splitRunner, channel, raceAnnouncer);
+        Race race =  api.findRaceWithTwitchUser(splitRunner);
         if (race == null) {
             this.sendMessage(splitRunner + " is not part of a race on speedrunslive.com right now.", channel);
         } else {
@@ -83,7 +83,7 @@ public class TwitchJim extends TwitchBot {
         }
     }
 
-    private void findRaceWithId(User user, Channel channel, String command, RaceAnnouncer raceAnnouncer) {
+    private void addRaceWithId(User user, Channel channel, String command, RaceAnnouncer raceAnnouncer) {
         String raceId = command.substring("race ".length());
         Race race = api.getSingleRace(raceId);
         if (race == null) {
@@ -94,7 +94,7 @@ public class TwitchJim extends TwitchBot {
         }
     }
 
-    private Race findRaceForUser(String username, Channel channel, RaceAnnouncer raceAnnouncer) {
+    private Race addRaceForUserExecutingCommand(String username, Channel channel, RaceAnnouncer raceAnnouncer) {
         Race race = api.findRaceWithTwitchUser(username);
         if (race == null) {
             this.sendMessage("@" + username + " You are not part of a race on speedrunslive.com right now.", channel);
