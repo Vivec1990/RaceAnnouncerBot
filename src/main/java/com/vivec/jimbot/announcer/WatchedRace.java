@@ -67,8 +67,8 @@ public class WatchedRace {
             getSplits().add(raceSplit);
 
             // check all splits in case someone dropped as last runner
-            getSplits().forEach(this::announceSplitIfComplete);
         }
+        getSplits().forEach(this::announceSplitIfComplete);
     }
 
     private void addEntrantToLiveSplitCollection(Entrant e) {
