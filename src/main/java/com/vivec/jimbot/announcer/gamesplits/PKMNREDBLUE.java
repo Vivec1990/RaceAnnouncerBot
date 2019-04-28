@@ -2,32 +2,34 @@ package com.vivec.jimbot.announcer.gamesplits;
 
 public enum PKMNREDBLUE {
 
-	NIDORAN		("Nidoran", true, "Nido", "NidoranM", "MankeyS"),
-	BROCK		("Brock", true, "Bro"),
-	ROUTE3		("Route 3", true, "Route 03", "Rt. 03", "Rt. 3"),
-	MOON		("Mt. Moon", true, "Mt Moon", "Moon", "Mt Doom"),
-	BRIDGE		("Nugget Bridge", true, "Bridge", "Nugget"),
-	MISTY		("Misty", true),
-	SURGE		("Surge", true),
-	FLY			("Fly", true, "HM02", "HM2", "HM Fly"),
-	FLUTE		("Flute", true, "Pok�Flute", "PokeFlute"),
-	KOGA		("Koga", true),
-	ERIKA		("Erika", false),
-	BLAINE		("Blaine", false),
-	SABRINA		("Sabrina", true),
-	GIOVANNI	("Giovanni", true),
-	LORELEI		("Lorelei", true),
-	BRUNO		("Bruno", true),
-	AGATHA		("Agatha", true),
-	LANCE		("Lance", true),
-	CHAMPION	("Champion", true, "Champ"),
-	HALLOFFAME	("Hall of Fame", true, "HoF", "RTA End", "End");
-	
+	NIDORAN		(0, "Nidoran", true, "Nido", "NidoranM", "MankeyS"),
+	BROCK		(1, "Brock", true, "Bro"),
+	ROUTE3		(2,"Route 3", true, "Route 03", "Rt. 03", "Rt. 3"),
+	MOON		(3,"Mt. Moon", true, "Mt Moon", "Moon", "Mt Doom"),
+	BRIDGE		(4,"Nugget Bridge", true, "Bridge", "Nugget"),
+	MISTY		(5,"Misty", true),
+	SURGE		(6,"Surge", true),
+	FLY			(7,"Fly", true, "HM02", "HM2", "HM Fly"),
+	FLUTE		(8,"Flute", true, "Pok�Flute", "PokeFlute"),
+	KOGA		(9,"Koga", true),
+	ERIKA		(10,"Erika", false),
+	BLAINE		(11,"Blaine", false),
+	SABRINA		(12,"Sabrina", true),
+	GIOVANNI	(13,"Giovanni", true),
+	LORELEI		(14,"Lorelei", true),
+	BRUNO		(15,"Bruno", true),
+	AGATHA		(16,"Agatha", true),
+	LANCE		(17,"Lance", true),
+	CHAMPION	(18,"Champion", true, "Champ"),
+	HALLOFFAME	(19,"Hall of Fame", true, "HoF", "RTA End", "End");
+
+	private Integer orderNr;
 	private String name;
 	private boolean announce;
 	private String[] aliases;
 	
-	private PKMNREDBLUE(String name, boolean announce, String... aliases) {
+	private PKMNREDBLUE(Integer orderNr, String name, boolean announce, String... aliases) {
+		this.orderNr = orderNr;
 		this.name = name;
 		this.announce = announce;
 		this.aliases = aliases;
@@ -60,6 +62,8 @@ public enum PKMNREDBLUE {
 		}
 		return null;
 	}
+
+	public Integer getOrderNr() { return orderNr; }
 
 	public String getName() {
 		return name;

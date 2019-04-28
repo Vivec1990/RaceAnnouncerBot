@@ -14,9 +14,13 @@ public class RaceSplit {
 
 	private String splitName;
 	private final List<SplitTime> splitTimes = new ArrayList<>();
+	private Boolean announced;
+	private Integer orderNr;
 	
-	RaceSplit(String splitName) {
+	RaceSplit(String splitName, Integer OrderNr) {
 		this.splitName = splitName;
+		this.orderNr = orderNr;
+		this.clearAnnounced();
 	}
 	
 	void addTime(Entrant runner, String time) {
@@ -27,7 +31,7 @@ public class RaceSplit {
 				return;
 			}
 		}
-		splitTimes.add(new SplitTime(runner, time));
+		splitTimes.add(new SplitTime(runner, time, this.orderNr, this.getSplitName()));
 		splitTimes.sort(new SplitTimeComparator());
 		LOG.info("Time recorded for split [{}] for runner [{}]. The time was {}", this.splitName, runner.getDisplayName(), time);
 	}
@@ -48,6 +52,10 @@ public class RaceSplit {
 		}
 		return null;
 	}
+
+	public void setAnnounced() { announced = true; }
+	public void clearAnnounced() { announced = false; }
+	public Boolean hasBeenAnnounced() { return announced; }
 	
 	@Override
 	public int hashCode() {
@@ -74,10 +82,14 @@ public class RaceSplit {
 	public class SplitTime {
 		private Entrant runner;
 		private long time;
+		private Integer orderNr;
+		private String splitName;
 			
-		SplitTime(Entrant runner, String time) {
+		SplitTime(Entrant runner, String time, Integer orderNr, String splitName) {
 			this.runner = runner;
 			this.time = parseTime(time);
+			this.orderNr = orderNr;
+			this.splitName = splitName;
 		}
 		
 		void updateTime(String time) {
@@ -116,6 +128,10 @@ public class RaceSplit {
 		}
 
 		long getTime() { return this.time; }
+
+		Integer getOrderNr() { return this.orderNr; }
+
+		String getSplitName() { return this.splitName; }
 		
 		@Override
 		public String toString() {
@@ -124,10 +140,13 @@ public class RaceSplit {
 		
 	}
 
-	public class SplitTimeComparator implements Comparator<SplitTime> {
+	public static class SplitTimeComparator implements Comparator<SplitTime> {
 		@Override
 		public int compare(SplitTime t1, SplitTime t2) {
-			return (int) Math.signum(t1.getTime() - t2.getTime());
+			if(t1.getOrderNr() == t2.getOrderNr()) {
+				return (int) Math.signum(t1.getTime() - t2.getTime()); // sort in increasing order
+			}
+			return (int) Math.signum(t2.getOrderNr() - t1.getOrderNr()); // sort in decreasing order
 		}
 	}
 }

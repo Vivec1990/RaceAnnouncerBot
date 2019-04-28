@@ -17,10 +17,14 @@ import org.apache.logging.log4j.Logger;
 import org.kitteh.irc.client.library.Client;
 
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
+
+import com.vivec.jimbot.announcer.RaceSplit.SplitTime;
 
 import static com.vivec.jimbot.announcer.gamesplits.PKMNREDBLUE.getSplitDataByNameOrAlias;
 import static com.vivec.jimbot.announcer.gamesplits.PKMNREDBLUE.getSplitNameByNameOrAlias;
@@ -29,7 +33,7 @@ public class WatchedRace {
 
     private static final Logger LOG = LogManager.getLogger(WatchedRace.class);
     private final List<Entrant> runnersConnectedThroughLiveSplit = new ArrayList<>();
-    private final List<String> announcedSplits = new ArrayList<>();
+    //private final List<String> announcedSplits = new ArrayList<>();
     private final Game game;
     private final List<RaceSplit> splits = new ArrayList<>();
     private final String raceId;
@@ -50,6 +54,7 @@ public class WatchedRace {
     }
 
     public void recordSplitTime(String splitName, String user, String time) {
+        PKMNREDBLUE standardSplitData = PKMNREDBLUE.getSplitDataByNameOrAlias(splitName);
         Entrant e = Optional.ofNullable(findEntrantByUsername(user))
                 .orElse(getRunnerInRaceFromAPI(user));
         if (e != null) {
@@ -61,13 +66,49 @@ public class WatchedRace {
                 }
             }
             RaceSplit raceSplit = Optional.ofNullable(findRaceSplitByName(splitName))
-                    .orElse(new RaceSplit(splitName));
+                    .orElse(new RaceSplit(splitName, standardSplitData.getOrderNr()));
             raceSplit.addTime(e, time);
             getSplits().add(raceSplit);
 
             // check all splits in case someone dropped as last runner
             getSplits().forEach(this::announceSplitIfComplete);
         }
+    }
+
+    public String getAllRaceSplits() {
+        List<SplitTime> allSplitTimes = new ArrayList<SplitTime>();
+        // collect all Split Times that were posted by the runners
+        for(RaceSplit rs : this.splits) {
+            for(SplitTime st : rs.getSplitTimes()) {
+                allSplitTimes.add(st);
+            }
+        }
+
+        Collections.sort(allSplitTimes, new RaceSplit.SplitTimeComparator()); // sort all SplitTimes
+
+        List<String> runnerNames = new ArrayList<>();
+
+        Iterator<SplitTime> iterator = allSplitTimes.iterator();
+        // iterate through all SplitTimes
+        while (iterator.hasNext()) {
+            if(!runnerNames.contains(iterator.next().getEntrantName())) { // found first (most progressed after sorting) SplitTime of the runner
+                runnerNames.add(iterator.next().getEntrantName());
+            } else { // else found a slower SplitTime that is removed
+                iterator.remove();
+            }
+        }
+
+        // Output the remaining SplitTimes (sorted and only one per Runner)
+        System.out.println("Announcing Leaderboard");
+
+        String message = "Leaderboard: ";
+        int position = 0;
+        for(SplitTime st : allSplitTimes) {
+            message += ++position + ". " + st.getEntrantName() + " : " + st.getSplitName() + " (" + st.getDisplayTime() + ") | ";
+        }
+        System.out.println(message);
+
+        return message;
     }
 
     private Entrant getRunnerInRaceFromAPI(String user) {
@@ -80,7 +121,7 @@ public class WatchedRace {
     }
 
     private void announceSplitIfComplete(RaceSplit rs) {
-        if (announcedSplits.contains(rs.getSplitName())) {
+        if(rs.hasBeenAnnounced()) {
             LOG.warn("Split {} has already been announced, not announcing again.", rs.getSplitName());
             return;
         }
@@ -124,7 +165,7 @@ public class WatchedRace {
                     LOG.info("Sending times to {}", e.getTwitch());
                     twitchClient.sendMessage(message, Channel.getChannel(e.getTwitch().toLowerCase(), twitchClient));
                 });
-        announcedSplits.add(rs.getSplitName());
+        rs.setAnnounced();
     }
 
     private Entrant findEntrantByUsername(String user) {
