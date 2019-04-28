@@ -57,7 +57,7 @@ public class SpeedrunsliveAPI {
 		return allRaces;
 	}
 	
-	public Race findRaceWithTwitchUser(String user) {
+	private Race findRaceWithUser(String user, boolean twitchUser) {
 		try {
 			return getAllRaces()
 					.stream()
@@ -65,13 +65,22 @@ public class SpeedrunsliveAPI {
 					.filter(r -> r.getEntrants()
 							.stream()
 							.filter(e -> ENTERED == e.getState() || READY == e.getState())
-							.anyMatch(e -> user.equalsIgnoreCase(e.getTwitch())))
+							.anyMatch(e -> user.equalsIgnoreCase(twitchUser ? e.getTwitch() : e.getUserName()))
+					)
 					.findFirst()
 					.orElse(null);
 		} catch (IOException e) {
 			LOG.error("Error while retrieving data from SRL API", e);
 		}
 		return null;
+	}
+
+	public Race findRaceWithTwitchUser(String user) {
+		return findRaceWithUser(user, true);
+	}
+
+	public Race findRaceWithSRLUser(String user) {
+		return findRaceWithUser(user, false);
 	}
 	
 	public Race getSingleRace(String raceId) {
@@ -84,7 +93,7 @@ public class SpeedrunsliveAPI {
 		}
 		return null;
 	}
-	
+
 	private static class RequestURLs {
 		static final String REQ_ALL_RACES = "http://api.speedrunslive.com:81/races";
 		private static final String REQ_SINGLE_RACE = "http://api.speedrunslive.com:81/races/<race_id>";

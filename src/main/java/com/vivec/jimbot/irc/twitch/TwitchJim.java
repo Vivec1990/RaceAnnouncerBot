@@ -69,7 +69,7 @@ public class TwitchJim extends TwitchBot {
         String splitName = parts[1].trim();
         String splitTime = parts[2].trim();
 
-        Race race =  api.findRaceWithTwitchUser(splitRunner);
+        Race race =  api.findRaceWithSRLUser(splitRunner);
         if (race == null) {
             this.sendMessage(splitRunner + " is not part of a race on speedrunslive.com right now.", channel);
         } else {

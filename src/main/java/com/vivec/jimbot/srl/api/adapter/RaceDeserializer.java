@@ -5,7 +5,6 @@ import com.google.gson.JsonDeserializationContext;
 import com.google.gson.JsonDeserializer;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
-import com.google.gson.JsonParseException;
 import com.vivec.jimbot.srl.api.Entrant;
 import com.vivec.jimbot.srl.api.Game;
 import com.vivec.jimbot.srl.api.Race;
