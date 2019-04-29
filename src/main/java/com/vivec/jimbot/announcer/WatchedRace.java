@@ -65,7 +65,6 @@ public class WatchedRace {
                     .orElse(new RaceSplit(splitName));
             raceSplit.addTime(e, time);
             getSplits().add(raceSplit);
-
         }
         // check all splits in case someone dropped as last runner
         getSplits().forEach(this::announceSplitIfComplete);
