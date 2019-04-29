@@ -18,6 +18,10 @@
             <id>jcenter</id>
             <url>http://jcenter.bintray.com/</url>
         </repository>
+        <repository>
+            <id>my-local-repo</id>
+            <url>file://${basedir}/src/main/resources/repo</url>
+        </repository>
     </repositories>
 
     <build>
@@ -43,19 +47,26 @@
                 <version>2.22.0</version>
             </plugin>
             <plugin>
-                <!-- Build an executable JAR -->
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-jar-plugin</artifactId>
-                <version>3.1.0</version>
+                <artifactId>maven-assembly-plugin</artifactId>
                 <configuration>
                     <archive>
                         <manifest>
-                            <addClasspath>true</addClasspath>
-                            <classpathPrefix>lib/</classpathPrefix>
                             <mainClass>com.vivec.jimbot.JimBot162v2</mainClass>
                         </manifest>
                     </archive>
+                    <descriptorRefs>
+                        <descriptorRef>jar-with-dependencies</descriptorRef>
+                    </descriptorRefs>
                 </configuration>
+                <executions>
+                    <execution>
+                        <id>make-assembly</id> <!-- this is used for inheritance merges -->
+                        <phase>package</phase> <!-- bind to the packaging phase -->
+                        <goals>
+                            <goal>single</goal>
+                        </goals>
+                    </execution>
+                </executions>
             </plugin>
         </plugins>
     </build>
@@ -93,8 +104,6 @@
             <groupId>com.cavariux</groupId>
             <artifactId>twitchirc</artifactId>
             <version>1.2</version>
-            <scope>system</scope>
-            <systemPath>${project.basedir}/src/main/resources/libs/TwitchIRC_v1.2.jar</systemPath>
         </dependency>
 
         <dependency>
