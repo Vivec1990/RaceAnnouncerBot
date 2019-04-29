@@ -138,7 +138,7 @@ public class RaceSplit {
 	public class SplitTimeComparator implements Comparator<SplitTime> {
 		@Override
 		public int compare(SplitTime t1, SplitTime t2) {
-			return (int) Math.signum(t1.getTime() - t2.getTime());
+			return (int) Math.signum((float)t1.getTime() - t2.getTime());
 		}
 	}
 }
