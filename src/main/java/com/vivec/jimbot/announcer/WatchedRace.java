@@ -223,7 +223,6 @@ public class WatchedRace {
                     Thread.currentThread().interrupt();
                 }
             } while (!livesplitSRL.isPresent());
-
             srlLiveSplitChannel = livesplitSRL.orElseThrow(() -> new IllegalArgumentException("LiveSplit channel could not be found"));
         }
 
