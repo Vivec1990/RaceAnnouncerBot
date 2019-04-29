@@ -52,7 +52,7 @@
                         <manifest>
                             <addClasspath>true</addClasspath>
                             <classpathPrefix>lib/</classpathPrefix>
-                            <mainClass>ccom.vivec.jimbot.JimBot162v2</mainClass>
+                            <mainClass>com.vivec.jimbot.JimBot162v2</mainClass>
                         </manifest>
                     </archive>
                 </configuration>
