@@ -225,7 +225,6 @@ public class WatchedRace {
             } while (!livesplitSRL.isPresent());
             srlLiveSplitChannel = livesplitSRL.orElseThrow(() -> new IllegalArgumentException("LiveSplit channel could not be found"));
         }
-
     }
 
     private void joinTwitchChannelAndSendWelcome(Entrant e) {
