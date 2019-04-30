@@ -5,6 +5,7 @@ import com.vivec.jimbot.irc.twitch.TwitchIRCConnectionManager;
 import com.vivec.jimbot.irc.twitch.TwitchJim;
 
 public class JimBot162v2 {
+	public final static boolean DEBUG = true;
 
 	public static void main(String[] args) {
 		CredentialManager man = CredentialManager.getInstance();

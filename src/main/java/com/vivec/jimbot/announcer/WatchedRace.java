@@ -1,6 +1,7 @@
 package com.vivec.jimbot.announcer;
 
 import com.cavariux.twitchirc.Chat.Channel;
+import com.vivec.jimbot.JimBot162v2;
 import com.vivec.jimbot.announcer.gamesplits.PKMNREDBLUE;
 import com.vivec.jimbot.irc.srl.RaceSplitTimeListener;
 import com.vivec.jimbot.irc.srl.SpeedrunsliveIRCConnectionManager;
@@ -123,14 +124,19 @@ public class WatchedRace {
                     .append(st.getDisplayTime())
                     .append(" | ");
         }
+        if(JimBot162v2.DEBUG) {
+            LOG.info("{}", message);
+        }
 
-        getRunnersConnectedThroughLiveSplit()
-                .stream()
-                .filter(e -> PlayerState.FORFEIT != e.getState())
-                .forEach(e -> {
-                    LOG.info("Sending times to {}", e.getTwitch());
-                    twitchClient.sendMessage(message, Channel.getChannel(e.getTwitch().toLowerCase(), twitchClient));
-                });
+        if(!JimBot162v2.DEBUG) {
+            getRunnersConnectedThroughLiveSplit()
+                    .stream()
+                    .filter(e -> PlayerState.FORFEIT != e.getState())
+                    .forEach(e -> {
+                        LOG.info("Sending times to {}", e.getTwitch());
+                        twitchClient.sendMessage(message, Channel.getChannel(e.getTwitch().toLowerCase(), twitchClient));
+                    });
+        }
         announcedSplits.add(rs.getSplitName());
     }
 
@@ -229,8 +235,10 @@ public class WatchedRace {
 
     private void joinTwitchChannelAndSendWelcome(Entrant e) {
         runnersConnectedThroughLiveSplit.add(e);
-        twitchClient.joinChannel(e.getTwitch().toLowerCase());
-        twitchClient.sendMessage(CommonMessages.CHANNEL_ANNOUNCEMENT_JOIN, Channel.getChannel(e.getTwitch().toLowerCase(), twitchClient));
+        if(!JimBot162v2.DEBUG) {
+            twitchClient.joinChannel(e.getTwitch().toLowerCase());
+            twitchClient.sendMessage(CommonMessages.CHANNEL_ANNOUNCEMENT_JOIN, Channel.getChannel(e.getTwitch().toLowerCase(), twitchClient));
+        }
     }
 
 }
