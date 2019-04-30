@@ -11,6 +11,7 @@ import java.util.List;
 public class RaceSplit {
 
 	private static final Logger LOG = LogManager.getLogger(RaceSplit.class);
+	private static final String UNDO_SPLIT_MARKER = "-";
 
 	private String splitName;
 	private final List<SplitTime> splitTimes = new ArrayList<>();
@@ -24,16 +25,27 @@ public class RaceSplit {
 	}
 	
 	void addTime(Entrant runner, String time) {
+		boolean undoSplit = time.equalsIgnoreCase(UNDO_SPLIT_MARKER);
 		for(SplitTime sTime: splitTimes) {
 			if(runner.getDisplayName().equalsIgnoreCase(sTime.getEntrantName())) {
-				sTime.updateTime(time);
-				LOG.info("Runner {} already had a time recorded, updated the existing time.", sTime.getEntrantName() );
+				if (undoSplit) {
+					splitTimes.remove(sTime);
+					LOG.info("Runner {} undid split {}.", sTime.getEntrantName(), getSplitName());
+				} else {
+					sTime.updateTime(time);
+					LOG.info("Runner {} already had a time recorded, updated the existing time.", sTime.getEntrantName() );
+				}
 				return;
 			}
 		}
+
+		if (undoSplit) {
+			return;
+		}
+
 		splitTimes.add(new SplitTime(runner, time, this.orderNr, this.getSplitName()));
 		splitTimes.sort(new SplitTimeComparator());
-		LOG.info("Time recorded for split [{}] for runner [{}]. The time was {}", this.splitName, runner.getDisplayName(), time);
+		LOG.info("Time recorded for split [{}] for runner [{}]. The time was {}", getSplitName(), runner.getDisplayName(), time);
 	}
 	
 	String getSplitName() {

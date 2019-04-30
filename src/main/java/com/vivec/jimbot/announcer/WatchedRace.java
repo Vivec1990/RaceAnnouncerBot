@@ -70,9 +70,8 @@ public class WatchedRace {
                     .orElse(new RaceSplit(splitName, standardSplitData.getOrderNr()));
             raceSplit.addTime(e, time);
             getSplits().add(raceSplit);
-
-            // check all splits in case someone dropped as last runner
         }
+        // check all splits in case someone dropped as last runner
         getSplits().forEach(this::announceSplitIfComplete);
     }
 
@@ -265,10 +264,8 @@ public class WatchedRace {
                     Thread.currentThread().interrupt();
                 }
             } while (!livesplitSRL.isPresent());
-
             srlLiveSplitChannel = livesplitSRL.orElseThrow(() -> new IllegalArgumentException("LiveSplit channel could not be found"));
         }
-
     }
 
     private void joinTwitchChannelAndSendWelcome(Entrant e) {
