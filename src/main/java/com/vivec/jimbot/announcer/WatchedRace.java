@@ -107,6 +107,7 @@ public class WatchedRace {
         if (allActiveRunnersCompleted) {
             LOG.info("Announcing split {}", rs.getSplitName());
             activeRunners.forEach(e -> sendAnnouncementToEntrant(message, e));
+            announcedSplits.add(rs.getSplitName());
         }
     }
 
