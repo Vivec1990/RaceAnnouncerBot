@@ -10,10 +10,10 @@ public enum PKMNREDBLUE {
 	MISTY		(5,"Misty", true),
 	SURGE		(6,"Surge", true),
 	FLY			(7,"Fly", true, "HM02", "HM2", "HM Fly"),
-	FLUTE		(8,"Flute", true, "Pok�Flute", "PokeFlute"),
+	FLUTE		(8,"Flute", true, "PokéFlute", "PokeFlute"),
 	KOGA		(9,"Koga", true),
-	ERIKA		(10,"Erika", false),
-	BLAINE		(11,"Blaine", false),
+	ERIKA		(10,"Erika", true),
+	BLAINE		(11,"Blaine", true),
 	SABRINA		(12,"Sabrina", true),
 	GIOVANNI	(13,"Giovanni", true),
 	LORELEI		(14,"Lorelei", true),
@@ -28,7 +28,7 @@ public enum PKMNREDBLUE {
 	private String name;
 	private boolean announce;
 	private String[] aliases;
-	
+
 	private PKMNREDBLUE(Integer orderNr, String name, boolean announce, String... aliases) {
 		this.orderNr = orderNr;
 		this.name = name;

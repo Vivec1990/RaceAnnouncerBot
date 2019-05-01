@@ -24,6 +24,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 import com.vivec.jimbot.announcer.RaceSplit.SplitTime;
 
@@ -34,7 +35,7 @@ public class WatchedRace {
 
     private static final Logger LOG = LogManager.getLogger(WatchedRace.class);
     private final List<Entrant> runnersConnectedThroughLiveSplit = new ArrayList<>();
-    //private final List<String> announcedSplits = new ArrayList<>();
+    private final List<String> announcedSplits = new ArrayList<>();
     private final Game game;
     private final List<RaceSplit> splits = new ArrayList<>();
     private final String raceId;
@@ -141,7 +142,7 @@ public class WatchedRace {
     }
 
     private void announceSplitIfComplete(RaceSplit rs) {
-        if(rs.hasBeenAnnounced()) {
+        if (announcedSplits.contains(rs.getSplitName())) {
             LOG.warn("Split {} has already been announced, not announcing again.", rs.getSplitName());
             return;
         }
@@ -153,21 +154,34 @@ public class WatchedRace {
             }
         }
         Race race = api.getSingleRace(raceId);
-        for (Entrant e : runnersConnectedThroughLiveSplit) {
-            Optional.ofNullable(findEntrantByUsername(e.getUserName(), race.getEntrants()))
-                    .ifPresent(e::updateData);
-            if (e.getState() == PlayerState.FORFEIT) {
-                continue;
+        final String message = buildSegmentAnnouncement(rs);
+        List<Entrant> activeRunners = getRunnersThatHaveNotForfeit(race);
+        boolean allActiveRunnersCompleted = activeRunners.stream().allMatch(e -> rs.findTimeForRunner(e) != null);
+
+        if (allActiveRunnersCompleted) {
+            LOG.info("Announcing split {}", rs.getSplitName());
+            if(!JimBot162v2.DEBUG) {
+                activeRunners.forEach(e -> sendAnnouncementToEntrant(message, e));
             }
-            if (rs.findTimeForRunner(e) == null) {
-                LOG.info("{} is not finished with the split {} yet, not announcing.", e.getDisplayName(), rs.getSplitName());
-                return;
-            }
+            announcedSplits.add(rs.getSplitName());
         }
+    }
 
-        LOG.info("Announcing split {}", rs.getSplitName());
+    private List<Entrant> getRunnersThatHaveNotForfeit(Race race) {
+        return getRunnersConnectedThroughLiveSplit()
+                .stream()
+                .map(e -> updateEntrantData(race, e))
+                .filter(e -> PlayerState.FORFEIT != e.getState())
+                .collect(Collectors.toList());
+    }
 
-        StringBuilder message = new StringBuilder("Split " + rs.getSplitName() + " completed. Times: ");
+    private void sendAnnouncementToEntrant(String message, Entrant e) {
+        LOG.info("Sending times to {}", e.getTwitch());
+        twitchClient.sendMessage(message, Channel.getChannel(e.getTwitch().toLowerCase(), twitchClient));
+    }
+
+    private String buildSegmentAnnouncement(RaceSplit rs) {
+        StringBuilder message = new StringBuilder("Segment " + rs.getSplitName() + " completed. Times: ");
         int position = 0;
         for (RaceSplit.SplitTime st : rs.getSplitTimes()) {
             message.append(++position)
@@ -177,20 +191,13 @@ public class WatchedRace {
                     .append(st.getDisplayTime())
                     .append(" | ");
         }
-        if(JimBot162v2.DEBUG) {
-            LOG.info("{}", message);
-        }
+        return message.toString();
+    }
 
-        if(!JimBot162v2.DEBUG) {
-            getRunnersConnectedThroughLiveSplit()
-                    .stream()
-                    .filter(e -> PlayerState.FORFEIT != e.getState())
-                    .forEach(e -> {
-                        LOG.info("Sending times to {}", e.getTwitch());
-                        twitchClient.sendMessage(message, Channel.getChannel(e.getTwitch().toLowerCase(), twitchClient));
-                    });
-        }
-        rs.setAnnounced();
+    private Entrant updateEntrantData(Race race, Entrant e) {
+        Optional.ofNullable(findEntrantByUsername(e.getUserName(), race.getEntrants()))
+                .ifPresent(e::updateData);
+        return e;
     }
 
     private Entrant findEntrantByUsername(String user) {
@@ -249,6 +256,12 @@ public class WatchedRace {
         return api;
     }
 
+    private void joinTwitchChannelAndSendWelcome(Entrant e) {
+        runnersConnectedThroughLiveSplit.add(e);
+        twitchClient.joinChannel(e.getTwitch().toLowerCase());
+        twitchClient.sendMessage(CommonMessages.CHANNEL_ANNOUNCEMENT_JOIN, Channel.getChannel(e.getTwitch().toLowerCase(), twitchClient));
+    }
+
     private class RaceStateChecker implements Runnable {
 
         private WatchedRace wr;
@@ -291,14 +304,6 @@ public class WatchedRace {
                 }
             } while (!livesplitSRL.isPresent());
             srlLiveSplitChannel = livesplitSRL.orElseThrow(() -> new IllegalArgumentException("LiveSplit channel could not be found"));
-        }
-    }
-
-    private void joinTwitchChannelAndSendWelcome(Entrant e) {
-        runnersConnectedThroughLiveSplit.add(e);
-        if(!JimBot162v2.DEBUG) {
-            twitchClient.joinChannel(e.getTwitch().toLowerCase());
-            twitchClient.sendMessage(CommonMessages.CHANNEL_ANNOUNCEMENT_JOIN, Channel.getChannel(e.getTwitch().toLowerCase(), twitchClient));
         }
     }
 
