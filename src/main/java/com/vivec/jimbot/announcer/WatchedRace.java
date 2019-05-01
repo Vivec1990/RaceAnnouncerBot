@@ -160,7 +160,7 @@ public class WatchedRace {
                 continue;
             }
             if (rs.findTimeForRunner(e) == null) {
-                LOG.info(" {}is not finished with the split {} yet, not announcning.", e.getDisplayName(), rs.getSplitName());
+                LOG.info("{} is not finished with the split {} yet, not announcing.", e.getDisplayName(), rs.getSplitName());
                 return;
             }
         }
