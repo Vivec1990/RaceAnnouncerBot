@@ -113,7 +113,7 @@ public class WatchedRace {
 
         LOG.info("Announcing split {}", rs.getSplitName());
 
-        StringBuilder message = new StringBuilder("Split " + rs.getSplitName() + " completed. Times: ");
+        StringBuilder message = new StringBuilder("Segment " + rs.getSplitName() + " completed. Times: ");
         int position = 0;
         for (RaceSplit.SplitTime st : rs.getSplitTimes()) {
             message.append(++position)
