@@ -30,9 +30,8 @@ public class RaceSplitTimeListener {
 		String raceId = StringUtils.substringBetween(channel.getName(), "-", "-");
 
 		String data = message.substring("!time RealTime ".length()).trim();
-		String datadone = message.substring("!done RealTime ".length()).trim();
 		String splitName = isFinalSplit ? FINAL_TIME_SPLIT_NAME : StringUtils.substringBetween(message, "\"", "\"").trim();
-		String splitTime = isFinalSplit ? datadone.substring("\"\" ".length() + splitName.length()).trim() : data.substring("\"\" ".length() + splitName.length()).trim();
+		String splitTime = data.substring("\"\" ".length() + splitName.length()).trim();
 
 		Optional.ofNullable(RaceAnnouncer.getInstance())
 				.map(ra -> ra.getRaceByID(raceId))
