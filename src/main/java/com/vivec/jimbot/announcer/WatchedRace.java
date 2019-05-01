@@ -1,6 +1,7 @@
 package com.vivec.jimbot.announcer;
 
 import com.cavariux.twitchirc.Chat.Channel;
+import com.vivec.jimbot.JimBot162v2;
 import com.vivec.jimbot.announcer.gamesplits.PKMNREDBLUE;
 import com.vivec.jimbot.irc.srl.RaceSplitTimeListener;
 import com.vivec.jimbot.irc.srl.SpeedrunsliveIRCConnectionManager;
@@ -17,11 +18,15 @@ import org.apache.logging.log4j.Logger;
 import org.kitteh.irc.client.library.Client;
 
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
+
+import com.vivec.jimbot.announcer.RaceSplit.SplitTime;
 
 import static com.vivec.jimbot.announcer.gamesplits.PKMNREDBLUE.getSplitDataByNameOrAlias;
 import static com.vivec.jimbot.announcer.gamesplits.PKMNREDBLUE.getSplitNameByNameOrAlias;
@@ -38,6 +43,7 @@ public class WatchedRace {
     private final TwitchJim twitchClient = TwitchIRCConnectionManager.getInstance().getIRCClient();
     private final SpeedrunsliveAPI api = new SpeedrunsliveAPI();
     private final String srlLiveSplitChannelName;
+    private String standings;
     private org.kitteh.irc.client.library.element.Channel srlLiveSplitChannel;
 
     private ScheduledThreadPoolExecutor exec = new ScheduledThreadPoolExecutor(1);
@@ -51,6 +57,7 @@ public class WatchedRace {
     }
 
     public void recordSplitTime(String splitName, String user, String time) {
+        PKMNREDBLUE standardSplitData = PKMNREDBLUE.getSplitDataByNameOrAlias(splitName);
         Entrant e = Optional.ofNullable(findEntrantByUsername(user))
                 .orElse(getRunnerInRaceFromAPI(user));
         addEntrantToLiveSplitCollection(e);
@@ -62,13 +69,16 @@ public class WatchedRace {
                     splitName = standardSplitName;
                 }
             }
-            RaceSplit raceSplit = Optional.ofNullable(findRaceSplitByName(splitName))
-                    .orElse(new RaceSplit(splitName));
-            raceSplit.addTime(e, time);
-            getSplits().add(raceSplit);
+            if(standardSplitData != null) {
+                RaceSplit raceSplit = Optional.ofNullable(findRaceSplitByName(splitName))
+                        .orElse(new RaceSplit(splitName, standardSplitData.getOrderNr()));
+                raceSplit.addTime(e, time);
+                getSplits().add(raceSplit);
+            }
         }
         // check all splits in case someone dropped as last runner
         getSplits().forEach(this::announceSplitIfComplete);
+        getAllRaceSplits();
     }
 
     private void addEntrantToLiveSplitCollection(Entrant e) {
@@ -76,6 +86,50 @@ public class WatchedRace {
                 .noneMatch(ent -> ent.getUserName().equalsIgnoreCase(e.getUserName()))) {
             joinTwitchChannelAndSendWelcome(e);
         }
+    }
+
+    public void getAllRaceSplits() {
+        List<SplitTime> allSplitTimes = new ArrayList<SplitTime>();
+        // collect all Split Times that were posted by the runners
+        for(RaceSplit rs : this.splits) {
+            for(SplitTime st : rs.getSplitTimes()) {
+                allSplitTimes.add(st);
+            }
+        }
+
+        Collections.sort(allSplitTimes, new RaceSplit.SplitTimeComparator()); // sort all SplitTimes
+
+        List<String> runnerNames = new ArrayList<>();
+
+        Iterator<SplitTime> it = allSplitTimes.iterator();
+        // iterate through all SplitTimes
+        while (it.hasNext()) {
+            SplitTime st = it.next();
+            if(!runnerNames.contains(st.getEntrantName())) { // found first (most progressed after sorting) SplitTime of the runner
+                runnerNames.add(st.getEntrantName());
+            } else { // else found a slower SplitTime that is removed
+                it.remove();
+            }
+        }
+
+        // Output the remaining SplitTimes (sorted and only one per Runner)
+        LOG.info("Announcing Standings");
+
+        String message = "Standings: ";
+        int position = 0;
+        for(SplitTime st : allSplitTimes) {
+            message += ++position + ". " + st.getEntrantName() + " : " + st.getSplitName() + " (" + st.getDisplayTime() + ") ";
+            if(findEntrantByUsername(st.getEntrantName()).getState() ==  PlayerState.FORFEIT) {
+                message += "forfeited";
+            }
+            /*else if(findEntrantByUsername(st.getEntrantName()).getState() ==  PlayerState.FINISHED) {
+                    message += "finished";
+            }*/
+            message += " | ";
+        }
+        LOG.info("{}", message);
+
+        this.setStandings(message);
     }
 
     private Entrant getRunnerInRaceFromAPI(String user) {
@@ -106,7 +160,9 @@ public class WatchedRace {
 
         if (allActiveRunnersCompleted) {
             LOG.info("Announcing split {}", rs.getSplitName());
-            activeRunners.forEach(e -> sendAnnouncementToEntrant(message, e));
+            if(!JimBot162v2.DEBUG) {
+                activeRunners.forEach(e -> sendAnnouncementToEntrant(message, e));
+            }
             announcedSplits.add(rs.getSplitName());
         }
     }
@@ -186,6 +242,14 @@ public class WatchedRace {
 
     String getRaceId() {
         return raceId;
+    }
+
+    void setStandings(String standings) {
+        this.standings = standings;
+    }
+
+    public String getStandings() {
+        return standings;
     }
 
     public SpeedrunsliveAPI getApi() {
