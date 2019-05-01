@@ -46,12 +46,13 @@ public class TwitchJim extends TwitchBot {
 
         if (command.equalsIgnoreCase("raceinfo") || command.equalsIgnoreCase("racestats")) {
             sendRaceInformation(channel);
+        }
 
+        if (command.equalsIgnoreCase("standings")) {
             Race race = api.findRaceWithTwitchUser(channel.toString().substring(1));
             if(race != null) {
                 WatchedRace wr = RaceAnnouncer.getInstance().getRaceByID(race.getId());
-                String standings = wr.getAllRaceSplits();
-                this.sendMessage(standings, channel);
+                this.sendMessage(wr.getStandings(), channel);
             }
         }
     }

@@ -18,7 +18,7 @@ public class RaceSplit {
 	private Boolean announced;
 	private Integer orderNr;
 	
-	RaceSplit(String splitName, Integer OrderNr) {
+	RaceSplit(String splitName, Integer orderNr) {
 		this.splitName = splitName;
 		this.orderNr = orderNr;
 		this.clearAnnounced();
@@ -155,7 +155,7 @@ public class RaceSplit {
 	public static class SplitTimeComparator implements Comparator<SplitTime> {
 		@Override
 		public int compare(SplitTime t1, SplitTime t2) {
-			if(t1.getOrderNr() == t2.getOrderNr()) {
+			if(t1.getOrderNr().equals(t2.getOrderNr())) {
 				return (int) Math.signum(t1.getTime() - t2.getTime()); // sort in increasing order
 			}
 			return (int) Math.signum(t2.getOrderNr() - t1.getOrderNr()); // sort in decreasing order

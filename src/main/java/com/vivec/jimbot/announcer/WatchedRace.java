@@ -42,6 +42,7 @@ public class WatchedRace {
     private final TwitchJim twitchClient = TwitchIRCConnectionManager.getInstance().getIRCClient();
     private final SpeedrunsliveAPI api = new SpeedrunsliveAPI();
     private final String srlLiveSplitChannelName;
+    private String standings;
     private org.kitteh.irc.client.library.element.Channel srlLiveSplitChannel;
 
     private ScheduledThreadPoolExecutor exec = new ScheduledThreadPoolExecutor(1);
@@ -67,13 +68,16 @@ public class WatchedRace {
                     splitName = standardSplitName;
                 }
             }
-            RaceSplit raceSplit = Optional.ofNullable(findRaceSplitByName(splitName))
-                    .orElse(new RaceSplit(splitName, standardSplitData.getOrderNr()));
-            raceSplit.addTime(e, time);
-            getSplits().add(raceSplit);
+            if(standardSplitData != null) {
+                RaceSplit raceSplit = Optional.ofNullable(findRaceSplitByName(splitName))
+                        .orElse(new RaceSplit(splitName, standardSplitData.getOrderNr()));
+                raceSplit.addTime(e, time);
+                getSplits().add(raceSplit);
+            }
         }
         // check all splits in case someone dropped as last runner
         getSplits().forEach(this::announceSplitIfComplete);
+        getAllRaceSplits();
     }
 
     private void addEntrantToLiveSplitCollection(Entrant e) {
@@ -83,7 +87,7 @@ public class WatchedRace {
         }
     }
 
-    public String getAllRaceSplits() {
+    public void getAllRaceSplits() {
         List<SplitTime> allSplitTimes = new ArrayList<SplitTime>();
         // collect all Split Times that were posted by the runners
         for(RaceSplit rs : this.splits) {
@@ -96,27 +100,35 @@ public class WatchedRace {
 
         List<String> runnerNames = new ArrayList<>();
 
-        Iterator<SplitTime> iterator = allSplitTimes.iterator();
+        Iterator<SplitTime> it = allSplitTimes.iterator();
         // iterate through all SplitTimes
-        while (iterator.hasNext()) {
-            if(!runnerNames.contains(iterator.next().getEntrantName())) { // found first (most progressed after sorting) SplitTime of the runner
-                runnerNames.add(iterator.next().getEntrantName());
+        while (it.hasNext()) {
+            SplitTime st = it.next();
+            if(!runnerNames.contains(st.getEntrantName())) { // found first (most progressed after sorting) SplitTime of the runner
+                runnerNames.add(st.getEntrantName());
             } else { // else found a slower SplitTime that is removed
-                iterator.remove();
+                it.remove();
             }
         }
 
         // Output the remaining SplitTimes (sorted and only one per Runner)
-        System.out.println("Announcing Leaderboard");
+        LOG.info("Announcing Standings");
 
-        String message = "Leaderboard: ";
+        String message = "Standings: ";
         int position = 0;
         for(SplitTime st : allSplitTimes) {
-            message += ++position + ". " + st.getEntrantName() + " : " + st.getSplitName() + " (" + st.getDisplayTime() + ") | ";
+            message += ++position + ". " + st.getEntrantName() + " : " + st.getSplitName() + " (" + st.getDisplayTime() + ") ";
+            if(findEntrantByUsername(st.getEntrantName()).getState() ==  PlayerState.FORFEIT) {
+                message += "forfeited";
+            }
+            /*else if(findEntrantByUsername(st.getEntrantName()).getState() ==  PlayerState.FINISHED) {
+                    message += "finished";
+            }*/
+            message += " | ";
         }
-        System.out.println(message);
+        LOG.info("{}", message);
 
-        return message;
+        this.setStandings(message);
     }
 
     private Entrant getRunnerInRaceFromAPI(String user) {
@@ -223,6 +235,14 @@ public class WatchedRace {
 
     String getRaceId() {
         return raceId;
+    }
+
+    void setStandings(String standings) {
+        this.standings = standings;
+    }
+
+    public String getStandings() {
+        return standings;
     }
 
     public SpeedrunsliveAPI getApi() {

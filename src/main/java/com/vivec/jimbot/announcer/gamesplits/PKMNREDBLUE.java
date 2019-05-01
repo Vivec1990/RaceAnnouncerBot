@@ -21,7 +21,8 @@ public enum PKMNREDBLUE {
 	AGATHA		(16,"Agatha", true),
 	LANCE		(17,"Lance", true),
 	CHAMPION	(18,"Champion", true, "Champ"),
-	HALLOFFAME	(19,"Hall of Fame", true, "HoF", "RTA End", "End");
+	HALLOFFAME	(19,"Hall of Fame", true, "HoF", "RTA End", "End"),
+	DONE		(1000,"Done", true);
 
 	private Integer orderNr;
 	private String name;
