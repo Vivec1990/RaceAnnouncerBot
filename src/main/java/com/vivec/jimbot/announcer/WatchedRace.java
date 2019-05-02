@@ -162,6 +162,8 @@ public class WatchedRace {
             LOG.info("Announcing split {}", rs.getSplitName());
             if(!JimBot162v2.DEBUG) {
                 activeRunners.forEach(e -> sendAnnouncementToEntrant(message, e));
+            } else {
+                LOG.info("{}", message);
             }
             announcedSplits.add(rs.getSplitName());
         }
@@ -258,8 +260,10 @@ public class WatchedRace {
 
     private void joinTwitchChannelAndSendWelcome(Entrant e) {
         runnersConnectedThroughLiveSplit.add(e);
-        twitchClient.joinChannel(e.getTwitch().toLowerCase());
-        twitchClient.sendMessage(CommonMessages.CHANNEL_ANNOUNCEMENT_JOIN, Channel.getChannel(e.getTwitch().toLowerCase(), twitchClient));
+        if(!JimBot162v2.DEBUG) {
+            twitchClient.joinChannel(e.getTwitch().toLowerCase());
+            twitchClient.sendMessage(CommonMessages.CHANNEL_ANNOUNCEMENT_JOIN, Channel.getChannel(e.getTwitch().toLowerCase(), twitchClient));
+        }
     }
 
     private class RaceStateChecker implements Runnable {
