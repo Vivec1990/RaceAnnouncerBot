@@ -41,6 +41,10 @@ public class TwitchJim extends TwitchBot {
                 addRaceWithId(user, channel, command, raceAnnouncer);
             } else if (command.startsWith("addtime ")) { // e.g. !addtime Headbob "Lance" 1:49:23.00
                 manuallyAddTime(channel, command, raceAnnouncer);
+            } else if (command.startsWith("addspectator ")) { // e.g. !addspectator raceId twitchname
+                addSpectator(channel, command, raceAnnouncer);
+            } else if (command.startsWith("remspectator ")) { // e.g. !remspectator raceId twitchname
+                remSpectator(channel, command, raceAnnouncer);
             }
         }
 
@@ -52,6 +56,10 @@ public class TwitchJim extends TwitchBot {
             Race race = api.findRaceWithTwitchUser(channel.toString().substring(1));
             if(race != null) {
                 WatchedRace wr = RaceAnnouncer.getInstance().getRaceByID(race.getId());
+                this.sendMessage(wr.getStandings(), channel);
+            }
+            WatchedRace wr = RaceAnnouncer.getInstance().getRaceBySpectator(channel.toString().substring(1));
+            if(wr != null) {
                 this.sendMessage(wr.getStandings(), channel);
             }
         }
@@ -88,6 +96,40 @@ public class TwitchJim extends TwitchBot {
             } else {
                 this.sendMessage("The race in which " + splitRunner + " is part of couldn't be found on speedrunslive.com.", channel);
             }
+        }
+    }
+
+    private void addSpectator(Channel channel, String command, RaceAnnouncer raceAnnouncer) {
+        String arguments = command.substring("addspectator ".length());
+        String[] parts = arguments.split(" ");
+        if (parts.length < 2) return;
+        String raceId = parts[0].trim();
+        String spectatorName = parts[1].trim();
+
+        WatchedRace wr = raceAnnouncer.getRaceByID(raceId);
+        if (wr != null) {
+            if(wr.addSpectator(spectatorName) == 1)
+                this.sendMessage("Added spectator " + spectatorName + " to race " + raceId + ".", channel);
+            else
+                this.sendMessage(spectatorName + " is already listed as a spectator for race " + raceId + ".", channel);
+        } else {
+            this.sendMessage("Couldn't find a race with that raceId.", channel);
+        }
+    }
+
+    private void remSpectator(Channel channel, String command, RaceAnnouncer raceAnnouncer) {
+        String arguments = command.substring("remspectator ".length());
+        String[] parts = arguments.split(" ");
+        if (parts.length < 2) return;
+        String raceId = parts[0].trim();
+        String spectatorName = parts[1].trim();
+
+        WatchedRace wr = raceAnnouncer.getRaceByID(raceId);
+        if (wr != null) {
+            wr.remSpectator(spectatorName);
+            this.sendMessage("Removed spectator " + spectatorName + " from race " + raceId + ".", channel);
+        } else {
+            this.sendMessage("Couldn't find a race with that raceId.", channel);
         }
     }
 

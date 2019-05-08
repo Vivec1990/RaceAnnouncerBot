@@ -35,6 +35,7 @@ public class WatchedRace {
 
     private static final Logger LOG = LogManager.getLogger(WatchedRace.class);
     private final List<Entrant> runnersConnectedThroughLiveSplit = new ArrayList<>();
+    private final List<String> spectators = new ArrayList<>();
     private final List<String> announcedSplits = new ArrayList<>();
     private final Game game;
     private final List<RaceSplit> splits = new ArrayList<>();
@@ -54,6 +55,7 @@ public class WatchedRace {
         srlLiveSplitChannelName = "#srl-" + raceId + "-livesplit";
         srlClient.addChannel(srlLiveSplitChannelName);
         exec.scheduleAtFixedRate(new RaceStateChecker(this), 0, 1, TimeUnit.MINUTES);
+        setStandings("No standings available yet.");
     }
 
     public void recordSplitTime(String splitName, String user, String time) {
@@ -222,12 +224,19 @@ public class WatchedRace {
 
     void finishRace() {
         LOG.info("Finishing up race, parting all channels associated with this race.");
+        
         getRunnersConnectedThroughLiveSplit()
                 .forEach(e -> {
                     twitchClient.partChannel(e.getTwitch());
                     LOG.debug("Left channel {}", e.getTwitch());
                 });
         srlClient.removeChannel(srlLiveSplitChannelName);
+
+        spectators.forEach(s ->{
+            twitchClient.partChannel(s);
+            LOG.debug("Left channel {}", s);
+        });
+        spectators.clear();
     }
 
     List<Entrant> getRunnersConnectedThroughLiveSplit() {
@@ -256,6 +265,24 @@ public class WatchedRace {
 
     public SpeedrunsliveAPI getApi() {
         return api;
+    }
+
+    public List<String> getSpectators() {
+        return spectators;
+    }
+
+    public int addSpectator(String spectatorname) {
+        if(!spectators.contains(spectatorname)) {
+            spectators.add(spectatorname);
+            twitchClient.joinChannel(spectatorname);
+            return 1;
+        }
+        return 0;
+    }
+
+    public void remSpectator(String spectatorname) {
+        spectators.remove(spectatorname);
+        twitchClient.partChannel(spectatorname);
     }
 
     private void joinTwitchChannelAndSendWelcome(Entrant e) {

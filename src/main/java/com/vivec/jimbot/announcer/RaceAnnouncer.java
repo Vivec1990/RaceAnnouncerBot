@@ -40,11 +40,22 @@ public class RaceAnnouncer {
 		}
 		return null;
 	}
-	
+
 	public WatchedRace getRaceByParticipant(String username) {
 		for(WatchedRace r : this.watchedRaces) {
 			for(Entrant e : r.getRunnersConnectedThroughLiveSplit()) {
 				if(username != null && username.equalsIgnoreCase(e.getTwitch())) {
+					return r;
+				}
+			}
+		}
+		return null;
+	}
+
+	public WatchedRace getRaceBySpectator(String username) {
+		for(WatchedRace r : this.watchedRaces) {
+			for(String s : r.getSpectators()) {
+				if(username != null && username.equalsIgnoreCase(s)) {
 					return r;
 				}
 			}
