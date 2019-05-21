@@ -133,9 +133,9 @@ public class RaceSplit {
 			long hour = (this.time / (1000 * 60 * 60));
 			long millis = this.time % 1000;
 			if(hour > 0) {
-				return String.format("%d:%02d:%02d.%d", hour, minute, second, millis);
+				return String.format("%d:%02d:%02d.%03d", hour, minute, second, millis);
 			} else {
-				return String.format("%02d:%02d.%d", minute, second, millis);
+				return String.format("%02d:%02d.%03d", minute, second, millis);
 			}
 		}
 
