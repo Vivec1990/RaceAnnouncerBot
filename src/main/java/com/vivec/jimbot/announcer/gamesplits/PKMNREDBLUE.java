@@ -29,7 +29,7 @@ public enum PKMNREDBLUE {
 	private boolean announce;
 	private String[] aliases;
 
-	private PKMNREDBLUE(Integer orderNr, String name, boolean announce, String... aliases) {
+	PKMNREDBLUE(Integer orderNr, String name, boolean announce, String... aliases) {
 		this.orderNr = orderNr;
 		this.name = name;
 		this.announce = announce;
