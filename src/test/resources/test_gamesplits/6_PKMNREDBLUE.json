@@ -1,0 +1,13 @@
+{
+  "game_id": 6,
+  "game_name": "Pokémon Red/Blue",
+  "category": "Any% Glitchless",
+  "splits": [
+    {
+      "name": "Nidoran",
+      "order": 0,
+      "announce": true,
+      "aliasas": ["Nido", "NidoranM", "MankeyS"]
+    }
+  ]
+}

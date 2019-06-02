@@ -1,0 +1,13 @@
+{
+  "game_id": 5,
+  "game_name": "Dummy",
+  "category": "Any%",
+  "splits": [
+    {
+      "name": "1st split",
+      "order": 0,
+      "announce": true,
+      "aliasas": ["1st", "First", "Primus"]
+    }
+  ]
+}
