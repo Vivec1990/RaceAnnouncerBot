@@ -1,6 +1,7 @@
 language: java
 jdk:
   - oraclejdk8
+dist: trusty
 after_success:
   - wget https://raw.githubusercontent.com/DiscordHooks/travis-ci-discord-webhook/master/send.sh
   - chmod +x send.sh
