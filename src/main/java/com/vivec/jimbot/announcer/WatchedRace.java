@@ -2,6 +2,8 @@ package com.vivec.jimbot.announcer;
 
 import com.cavariux.twitchirc.Chat.Channel;
 import com.vivec.jimbot.JimBot162v2;
+import com.vivec.jimbot.announcer.RaceSplit.SplitTime;
+import com.vivec.jimbot.announcer.blacklist.Blacklist;
 import com.vivec.jimbot.announcer.gamesplits.PKMNREDBLUE;
 import com.vivec.jimbot.irc.srl.RaceSplitTimeListener;
 import com.vivec.jimbot.irc.srl.SpeedrunsliveIRCConnectionManager;
@@ -24,9 +26,8 @@ import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
-
-import com.vivec.jimbot.announcer.RaceSplit.SplitTime;
 
 import static com.vivec.jimbot.announcer.gamesplits.PKMNREDBLUE.getSplitDataByNameOrAlias;
 import static com.vivec.jimbot.announcer.gamesplits.PKMNREDBLUE.getSplitNameByNameOrAlias;
@@ -46,6 +47,7 @@ public class WatchedRace {
     private final String srlLiveSplitChannelName;
     private String standings;
     private org.kitteh.irc.client.library.element.Channel srlLiveSplitChannel;
+    private Blacklist blacklist = Blacklist.getInstance();
 
     private ScheduledThreadPoolExecutor exec = new ScheduledThreadPoolExecutor(1);
 
@@ -71,7 +73,7 @@ public class WatchedRace {
                     splitName = standardSplitName;
                 }
             }
-            if(standardSplitData != null) {
+            if (standardSplitData != null) {
                 RaceSplit raceSplit = Optional.ofNullable(findRaceSplitByName(splitName))
                         .orElse(new RaceSplit(splitName, standardSplitData.getOrderNr()));
                 raceSplit.addTime(e, time);
@@ -91,10 +93,10 @@ public class WatchedRace {
     }
 
     public void getAllRaceSplits() {
-        List<SplitTime> allSplitTimes = new ArrayList<SplitTime>();
+        List<SplitTime> allSplitTimes = new ArrayList<>();
         // collect all Split Times that were posted by the runners
-        for(RaceSplit rs : this.splits) {
-            for(SplitTime st : rs.getSplitTimes()) {
+        for (RaceSplit rs : this.splits) {
+            for (SplitTime st : rs.getSplitTimes()) {
                 allSplitTimes.add(st);
             }
         }
@@ -107,7 +109,7 @@ public class WatchedRace {
         // iterate through all SplitTimes
         while (it.hasNext()) {
             SplitTime st = it.next();
-            if(!runnerNames.contains(st.getEntrantName())) { // found first (most progressed after sorting) SplitTime of the runner
+            if (!runnerNames.contains(st.getEntrantName())) { // found first (most progressed after sorting) SplitTime of the runner
                 runnerNames.add(st.getEntrantName());
             } else { // else found a slower SplitTime that is removed
                 it.remove();
@@ -117,21 +119,28 @@ public class WatchedRace {
         // Output the remaining SplitTimes (sorted and only one per Runner)
         LOG.info("Announcing Standings");
 
-        String message = "Standings: ";
-        int position = 0;
-        for(SplitTime st : allSplitTimes) {
-            message += ++position + ". " + st.getEntrantName() + " : " + st.getSplitName() + " (" + st.getDisplayTime() + ") ";
-            if(findEntrantByUsername(st.getEntrantName()).getState() ==  PlayerState.FORFEIT) {
-                message += "forfeited";
-            }
-            /*else if(findEntrantByUsername(st.getEntrantName()).getState() ==  PlayerState.FINISHED) {
-                    message += "finished";
-            }*/
-            message += " | ";
-        }
-        LOG.info("{}", message);
+        StringBuilder messageBuilder = new StringBuilder("Standings: ");
+        AtomicInteger position = new AtomicInteger();
 
-        this.setStandings(message);
+        allSplitTimes.forEach(splitTime -> {
+            messageBuilder.append(position.incrementAndGet())
+                    .append(". ")
+                    .append(splitTime.getEntrantName())
+                    .append(" : ")
+                    .append(splitTime.getSplitName())
+                    .append(" (")
+                    .append(splitTime.getDisplayTime())
+                    .append(") ");
+
+            if (findEntrantByUsername(splitTime.getEntrantName()).getState() == PlayerState.FORFEIT) {
+                messageBuilder.append(" [[FORFEIT]]");
+            }
+            messageBuilder.append(" | ");
+        });
+
+        LOG.info("{}", messageBuilder);
+
+        this.setStandings(messageBuilder.toString());
     }
 
     private Entrant getRunnerInRaceFromAPI(String user) {
@@ -157,12 +166,12 @@ public class WatchedRace {
         }
         Race race = api.getSingleRace(raceId);
         final String message = buildSegmentAnnouncement(rs);
-        List<Entrant> activeRunners = getRunnersThatHaveNotForfeit(race);
+        List<Entrant> activeRunners = getRunnersThatHaveNotForfeitAndAreNotBlacklisted(race);
         boolean allActiveRunnersCompleted = activeRunners.stream().allMatch(e -> rs.findTimeForRunner(e) != null);
 
         if (allActiveRunnersCompleted) {
             LOG.info("Announcing split {}", rs.getSplitName());
-            if(!JimBot162v2.DEBUG) {
+            if (!JimBot162v2.DEBUG) {
                 activeRunners.forEach(e -> sendAnnouncementToEntrant(message, e));
             } else {
                 LOG.info("{}", message);
@@ -171,11 +180,12 @@ public class WatchedRace {
         }
     }
 
-    private List<Entrant> getRunnersThatHaveNotForfeit(Race race) {
+    private List<Entrant> getRunnersThatHaveNotForfeitAndAreNotBlacklisted(Race race) {
         return getRunnersConnectedThroughLiveSplit()
                 .stream()
                 .map(e -> updateEntrantData(race, e))
                 .filter(e -> PlayerState.FORFEIT != e.getState())
+                .filter(e -> blacklist.getBlacklistedUsers().contains(e.getUserName()))
                 .collect(Collectors.toList());
     }
 
@@ -224,7 +234,7 @@ public class WatchedRace {
 
     void finishRace() {
         LOG.info("Finishing up race, parting all channels associated with this race.");
-        
+
         getRunnersConnectedThroughLiveSplit()
                 .forEach(e -> {
                     twitchClient.partChannel(e.getTwitch());
@@ -232,7 +242,7 @@ public class WatchedRace {
                 });
         srlClient.removeChannel(srlLiveSplitChannelName);
 
-        spectators.forEach(s ->{
+        spectators.forEach(s -> {
             twitchClient.partChannel(s);
             LOG.debug("Left channel {}", s);
         });
@@ -255,12 +265,12 @@ public class WatchedRace {
         return raceId;
     }
 
-    void setStandings(String standings) {
-        this.standings = standings;
-    }
-
     public String getStandings() {
         return standings;
+    }
+
+    void setStandings(String standings) {
+        this.standings = standings;
     }
 
     public SpeedrunsliveAPI getApi() {
@@ -272,7 +282,7 @@ public class WatchedRace {
     }
 
     public int addSpectator(String spectatorname) {
-        if(!spectators.contains(spectatorname)) {
+        if (!spectators.contains(spectatorname)) {
             spectators.add(spectatorname);
             twitchClient.joinChannel(spectatorname);
             return 1;
@@ -287,7 +297,7 @@ public class WatchedRace {
 
     private void joinTwitchChannelAndSendWelcome(Entrant e) {
         runnersConnectedThroughLiveSplit.add(e);
-        if(!JimBot162v2.DEBUG) {
+        if (!JimBot162v2.DEBUG) {
             twitchClient.joinChannel(e.getTwitch().toLowerCase());
             twitchClient.sendMessage(CommonMessages.CHANNEL_ANNOUNCEMENT_JOIN, Channel.getChannel(e.getTwitch().toLowerCase(), twitchClient));
         }
