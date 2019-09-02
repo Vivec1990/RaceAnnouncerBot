@@ -5,6 +5,7 @@ import com.cavariux.twitchirc.Chat.User;
 import com.cavariux.twitchirc.Core.TwitchBot;
 import com.vivec.jimbot.announcer.RaceAnnouncer;
 import com.vivec.jimbot.announcer.WatchedRace;
+import com.vivec.jimbot.announcer.blacklist.Blacklist;
 import com.vivec.jimbot.srl.SpeedrunsliveAPI;
 import com.vivec.jimbot.srl.api.Race;
 import org.apache.commons.lang3.StringUtils;
@@ -15,6 +16,7 @@ public class TwitchJim extends TwitchBot {
 
     private Channel botChannel;
     private SpeedrunsliveAPI api;
+    private Blacklist blacklist = Blacklist.getInstance();
 
     TwitchJim(String username, String oauth) {
         this.setUsername(username);
@@ -45,6 +47,10 @@ public class TwitchJim extends TwitchBot {
                 addSpectator(channel, command, raceAnnouncer);
             } else if (command.startsWith("remspectator ")) { // e.g. !remspectator raceId twitchname
                 remSpectator(channel, command, raceAnnouncer);
+            } else if (command.startsWith("addBL ")) { // e.g. !addBL JuanlyWays
+                blacklistUser(command, channel);
+            } else if (command.startsWith("remBL ")) { // e.g. !remBL JuanlyWays
+                whitelistUser(command, channel);
             }
         }
 
@@ -155,6 +161,23 @@ public class TwitchJim extends TwitchBot {
             this.sendMessage("@" + username + " The race was added and will be announced once splits are completed by all entrants. Good luck & have fun!", channel);
         }
         return race;
+    }
+
+    private void whitelistUser(String command, Channel channel) {
+        String username = command.substring("remBL ".length());
+        if (blacklist.getBlacklistedUsers().contains(username)) {
+            blacklist.getBlacklistedUsers().remove(username);
+            this.sendMessage("The user " + username + " was successfully removed from the blacklist.", channel);
+        } else {
+            this.sendMessage("The user you requested to be whitelisted was not blacklisted.", channel);
+        }
+    }
+
+    private void blacklistUser(String command, Channel channel) {
+        String username = command.substring("addBL ".length());
+        blacklist.addBlacklistedUser(username);
+
+        this.sendMessage("The user " + username + " was blacklisted.", channel);
     }
 
 }
