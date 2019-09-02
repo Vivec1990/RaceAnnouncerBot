@@ -9,6 +9,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -21,7 +22,7 @@ class GameSplitServiceTest {
         @DisplayName("Load a specific split configuration from disk")
         void load_pkmn_red_blue() throws URISyntaxException {
             final String filename = "6_PKMNREDBLUE.json";
-            Path filePath = Paths.get(Objects.requireNonNull(GameSplitService.class.getClassLoader().getResource("gamesplits/" + filename)).toURI());
+            Path filePath = Paths.get(Objects.requireNonNull(GameSplitService.class.getClassLoader().getResource("test_gamesplits/" + filename)).toURI());
             GameSpecificConfiguration singleConfig = GameSplitService.loadSingleConfig(filePath);
             assertThat(singleConfig).isNotNull();
             assertThat(singleConfig.getGameId()).isEqualTo(6);
@@ -36,5 +37,12 @@ class GameSplitServiceTest {
             assertThat(allTestConfigs).isNotNull();
             assertThat(allTestConfigs).hasSize(2);
         }
+    }
+
+    @Test
+    void get_split_config_by_id() {
+        GameSplitService.updateAvailableSplitConfiguration("test_gamesplits/");
+        Optional<GameSpecificConfiguration> configurationBy = GameSplitService.getConfigurationBy(6);
+        assertThat(configurationBy).isNotEmpty();
     }
 }
