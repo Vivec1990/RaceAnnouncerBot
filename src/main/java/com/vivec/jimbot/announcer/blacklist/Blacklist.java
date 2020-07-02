@@ -15,14 +15,15 @@ import java.util.List;
 public final class Blacklist {
 
     private static final Logger LOG = LogManager.getLogger(Blacklist.class);
-    private static final String BLACKLIST_LOCATION = System.getProperty("user.home") + "jimbot/blacklist.txt";
+    private static final String BLACKLIST_LOCATION = System.getProperty("user.home") + "/jimbot/blacklist.txt";
     private static final Blacklist INSTANCE = new Blacklist();
-    private static Path blacklistPath = Paths.get(BLACKLIST_LOCATION);
+    private static Path blacklistPath;
 
     private List<String> blacklistedUsers = new ArrayList<>();
 
     private Blacklist() {
         LOG.info("Loading blacklist information from Disk");
+        blacklistPath = Paths.get(BLACKLIST_LOCATION);
         ensureBlacklistFileExists();
     }
 
